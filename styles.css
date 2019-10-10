@@ -1,9 +1,4 @@
 body {margin: 0; padding: 0; background-color: #ededed; font: 1.1em verdana, arial;}
-/*body {font: 85% arial, sans-serif; text-align: center;}*/
-/*a, h1, h2, p, form {margin-left: 10px; margin-right: 10px;}*/
-/*p {margin-top: 0; margin-bottom: 10px;}*/
-/*a {text-decoration: none; color: #07C;}*/
-/*a.in_text {margin: 0px;}*/
 
 /* For divs that change dimensions when afected by margin, padding or a border. */
 * {
@@ -11,19 +6,21 @@ body {margin: 0; padding: 0; background-color: #ededed; font: 1.1em verdana, ari
     -moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
-/* For when objects overflow the containers. */ 
-.clearfix {
-  overflow: auto;
-  zoom: 1; /* for IE6 */
+
+#header {
+	background-color: #ededed; 
+	text-align: center;
 }
-
-
-#header {background-color: #ededed; text-align: center;}
-#container {min-height: 500px; background-color: white;}
-#content {max-width: 800px; margin: 0 auto; padding: 10px;}
-#footer {padding: 10px; text-align: center;}
-
-
-#navigation {float: left; width: 200px; background: #F6F0E0;}
-#navigation ul {margin: 15px 0; padding: 0; list-style-type: none;}
-#navigation li {margin-bottom: 5px;}
+#container {
+	min-height: 500px; 
+	background-color: white;
+}
+#content {
+	max-width: 800px; 
+	margin: 0 auto; 
+	padding: 10px;
+}
+#footer {
+	padding: 10px; 
+	text-align: center;
+}
