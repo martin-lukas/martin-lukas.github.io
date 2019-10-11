@@ -3,10 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>App</title>
+    <script src="parse.js"></script>
 </head>
 <body>
-
-Ahojkkkky
-
+<h1>Czech Descriptor</h1>
+<p>This is the first czech descriptor of its kind. Type in a Czech word, and this program will
+    find and show you everything about this word.</p>
+<label for="word">Word:</label>
+<input id="word" type="text">
+<input id="send" type="submit" value="Send" onclick="sendRequest();">
+<br>
+<br>
+<div id="output"></div>
+<script>
+    // Enabling sending form with pressing ENTER in ZIP code text field
+    var zipInput = document.getElementById("word");
+    zipInput.addEventListener("keyup", function (event) {
+        event.preventDefault();
+        if (event.keyCode === 13) {
+            document.getElementById("send").click();
+        }
+    });
+</script>
 </body>
 </html>
