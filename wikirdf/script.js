@@ -54,6 +54,7 @@ function choosePOSHandler(resource, posUri) {
 }
 
 function handleNoun(resource) {
+    let output = document.getElementById("output");
     let query =
         PREFIXES +
         'SELECT  ?base ?lab ?gen ?an ' +
@@ -62,12 +63,34 @@ function handleNoun(resource) {
         '                     l:gender            ?gen ;' +
         '                     rdfs:label          ?lab .' +
         '    optional {<' + resource + '> l:animacy ?an} ' +
-        '    ?base            l:formCaseVariant   <' + resource + '>' +
+        '    optional {?base  l:formCaseVariant   <' + resource + '>}' +
         '}';
     let results = getResults(query);
     console.log(results);
+    // output.innerText += JSON.stringify(results, null, 4);
+    document.body.appendChild(document.createElement('pre')).innerHTML = syntaxHighlight(results);
 }
-
+function syntaxHighlight(json) {
+    if (typeof json != 'string') {
+        json = JSON.stringify(json, undefined, 2);
+    }
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
 
 function handleAdjective(resource) {
     console.log("Im in handleAdj");
