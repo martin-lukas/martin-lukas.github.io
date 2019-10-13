@@ -4,11 +4,93 @@ function sendRequest() {
 }
 
 function extract(word) {
-    // let output = document.getElementById("output");
     let resources = getResources(word);
     for (let i = 0; i < resources.length; i++) {
         extractResource(resources[i]);
     }
+}
+
+function extractResource(resUri) {
+    let base = getBase(resUri);
+    let pronunciation = getPronunciationElement(getPronunciations(base));
+
+    if (base != null) {
+        appendElement('<div>' + base + pronunciation + '</div>');
+    }
+}
+
+function getPOS(resName) {
+    let posQuery =
+        PREFIXES +
+        'SELECT  ?pos ' +
+        'WHERE { ' +
+        '    b:' + resName + ' l:partOfSpeech ?pos . ' +
+        '}';
+    let results = getResults(posQuery);
+    if (results.length > 0) {
+        return results["pos"];
+    }
+    return null;
+}
+
+function getPronunciationElement(pronunciations) {
+    let pronElement = "";
+    if (pronunciations > 0) {
+        pronElement = " (" + pronunciations.join(" / ") + "):";
+    }
+    return pronElement;
+}
+
+function getBase(res) {
+    let baseQuery =
+        PREFIXES +
+        'SELECT ?base ' +
+        'WHERE { ' +
+        '    optional {' +
+        '        ?base dbn:describes <' + res + '>' +
+        '    } ' +
+        '    optional { ' +
+        '        ?posRes    lemon:formVariant <' + res + ">." +
+        '        ?base      dbn:describes      ?posRes . ' +
+        '    }' +
+        '}';
+    let results = getResults(baseQuery);
+    if (results.length === 1) {
+        return results[0]["base"]["value"];
+    }
+    return null;
+}
+
+function getPronunciations(base) {
+    let pronQuery =
+        PREFIXES +
+        'SELECT  ?pron ' +
+        'WHERE { ' +
+        '    <' + base + '> l:pronunciation ?pron . ' +
+        '}';
+    let results = getResults(pronQuery);
+    if (results.length > 0) {
+        return results["pron"];
+    }
+    return [];
+}
+
+function getNounBase(res) {
+    let query =
+        PREFIXES +
+        'SELECT  ?base ?lab ?gen ?an ' +
+        'WHERE {' +
+        '' +
+        '}';
+    let results = getResults(query);
+}
+
+function getPropertyName(property) {
+    return property.substring(property.lastIndexOf("#") + 1);
+}
+
+function getResourceName(resource) {
+    return resource.substring(resource.lastIndexOf("/") + 1);
 }
 
 function getResources(word) {
@@ -16,94 +98,21 @@ function getResources(word) {
         PREFIXES +
         'SELECT ?res ' +
         'WHERE { ' +
-        '    ?res rdfs:label \"' + word + '\"@cs .' +
+        '    ?res rdfs:label \"' + word + '\"@cs ;' +
+        '         a          lemon:LexicalEntry .' +
         '} ';
     let results = getResults(resQuery);
-    let resourceUris = [];
-    for (let i = 0; i < results.length; i++) {
-        resourceUris.push(results[i]["res"]["value"]);
-    }
-    return resourceUris;
-}
-
-function extractResource(resource) {
-    let posQuery =
-        PREFIXES +
-        'SELECT ?pos ' +
-        'WHERE { ' +
-        '    <' + resource + '> l:partOfSpeech ?pos .' +
-        '} ';
-    let results = getResults(posQuery);
-    for (let i = 0; i < results.length; i++) {
-        choosePOSHandler(resource, results[i]["pos"]["value"]);
-    }
-
-
-}
-
-function choosePOSHandler(resource, posUri) {
-    let pos = getLocalName(posUri);
-    switch (pos) {
-        case "Noun":
-            handleNoun(resource);
-            break;
-        case "Adjective":
-            handleAdjective(resource);
-            break;
-    }
-}
-
-function handleNoun(resource) {
-    let output = document.getElementById("output");
-    let query =
-        PREFIXES +
-        'SELECT  ?base ?lab ?gen ?an ' +
-        'WHERE {' +
-        '    <' + resource + '> l:partOfSpeech      l:Noun ;' +
-        '                     l:gender            ?gen ;' +
-        '                     rdfs:label          ?lab .' +
-        '    optional {<' + resource + '> l:animacy ?an} ' +
-        '    optional {?base  l:formCaseVariant   <' + resource + '>}' +
-        '}';
-    let results = getResults(query);
-    console.log(results);
-    // output.innerText += JSON.stringify(results, null, 4);
-    document.body.appendChild(document.createElement('pre')).innerHTML = syntaxHighlight(results);
-}
-function syntaxHighlight(json) {
-    if (typeof json != 'string') {
-        json = JSON.stringify(json, undefined, 2);
-    }
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        var cls = 'number';
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                cls = 'key';
-            } else {
-                cls = 'string';
-            }
-        } else if (/true|false/.test(match)) {
-            cls = 'boolean';
-        } else if (/null/.test(match)) {
-            cls = 'null';
+    let resources = [];
+    if (results !== undefined) {
+        for (let i = 0; i < results.length; i++) {
+            resources.push(results[i]["res"]["value"]);
         }
-        return '<span class="' + cls + '">' + match + '</span>';
-    });
-}
-
-function handleAdjective(resource) {
-    console.log("Im in handleAdj");
-
-}
-
-
-function getLocalName(resource) {
-    return resource.substring(resource.lastIndexOf("#") + 1);
+    }
+    return resources;
 }
 
 function getResults(query) {
-    let endpoint = "http://127.0.0.1:8080/fuseki/wiki/sparql";
+    let endpoint = "http://localhost:3030/wiki/sparql";
     let params = "?query=" + encodeURIComponent(query) + "&format=json";
 
     let result;
@@ -115,20 +124,28 @@ function getResults(query) {
         }
     };
     http.send();
-    let bindings;
+    let results;
     if (result !== undefined) {
-        console.log(result);
-        bindings = JSON.parse(result)["results"]["bindings"];
-        if (bindings !== undefined && bindings !== null) {
-            return bindings;
-        }
+        // console.log(result);
+        let resultObj = JSON.parse(result);
+        results = resultObj["results"]["bindings"];
     }
-    return [];
+    if (results === undefined || results === null) {
+        results = [];
+    }
+
+    return results;
 }
 
-let PREFIXES = "PREFIX b: <http://www.example.com/ontology#> " +
+function appendElement(element) {
+    document.body.innerHTML += element;
+}
+
+let PREFIXES = "PREFIX b: <http://www.example.com/> " +
+    "PREFIX onto: <http://www.example.com/ontology#> " +
     "PREFIX lemon: <http://lemon-model.net/lemon#> " +
     "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
     "PREFIX wiki: <http://cs.wiktionary.org/wiki/> " +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-    "PREFIX l: <http://www.lexinfo.net/ontology/2.0/lexinfo#> ";
+    "PREFIX l: <http://www.lexinfo.net/ontology/2.0/lexinfo#> " +
+    "PREFIX dbn: <http://kaiko.getalp.org/dbnary#> ";
