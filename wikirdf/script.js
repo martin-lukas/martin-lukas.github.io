@@ -7,6 +7,7 @@ function sendRequest() {
     let word = document.getElementById("word").value;
     document.getElementById("tbody").innerHTML = "";
     extract(word.trim());
+    console.log("Extraction FINISHED");
 }
 
 function extract(word) {
@@ -46,6 +47,8 @@ function extractPOS(baseObj, res, pos) {
             extractAdjective(baseObj, res);
             break;
     }
+    // TODO before adding new ones, create a new branch called... implementing pronouns or something
+    // and then merge the branches
 }
 
 // POS specific functions =============================================================================
@@ -546,6 +549,8 @@ function toCzech(word) {
             return "nepřechodné";
         case  "TransitiveFrame" :
             return "přechodné";
+        default:
+            return word;
     }
 }
 
