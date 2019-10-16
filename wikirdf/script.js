@@ -1,65 +1,270 @@
+let currentRow;
+let baseMap;
+
 function sendRequest() {
+    currentRow = 0;
+    baseMap = {};
     let word = document.getElementById("word").value;
+    document.getElementById("tbody").innerHTML = "";
     extract(word.trim());
 }
 
 function extract(word) {
+    let title = document.getElementById("title");
     let resources = getResources(word);
+    title.innerHTML = "<b>Základní tvary pro \'" + word + ":</b>";
     for (let i = 0; i < resources.length; i++) {
+        console.log("Extracting resource: " + resources[i]);
         extractResource(resources[i]);
     }
 }
 
-function extractResource(resUri) {
-    let base = getBase(resUri);
-    let pronunciation = getPronunciationElement(getPronunciations(base));
-
-    if (base != null) {
-        appendElement('<div>' + base + pronunciation + '</div>');
+function extractResource(resource) {
+    let baseObj = getBase(resource);
+    let base = baseObj["base"];
+    if (base !== undefined) {
+        let pronunciation = getPronunciationElement(getPronunciations(base));
+        let pos = getPOS(resource);
+        if (pos != null) {
+            if (!containsKey(baseMap, base)) {
+                appendID('<tr><td><b>' + getLabel(base) + '</b>' + pronunciation + '</td>' +
+                    '<td><ul class=\"entries\" id=\"row-' + currentRow + '\"></ul></td></tr>', "tbody");
+                baseMap[base] = currentRow++;
+            }
+            extractPOS(baseObj, resource, pos);
+        }
     }
 }
 
-function getPOS(resName) {
+function extractPOS(baseObj, res, pos) {
+    let posName = getOntoName(pos);
+    switch (posName) {
+        case "Noun":
+            extractNoun(baseObj, res);
+            break;
+        case "Adjective":
+            extractAdjective(baseObj, res);
+            break;
+    }
+}
+
+// POS specific functions =============================================================================
+
+function extractNoun(baseObj, res) {
+    let level = baseObj["level"];
+    let base = baseObj["base"];
+    if (level === 1) {
+        let query =
+            PREFIXES +
+            'SELECT ?lab ?gen ?an ' +
+            'WHERE { ' +
+            '    <' + res + '>  l:partOfSpeech l:Noun ; ' +
+            '                   rdfs:label     ?lab . ' +
+            '    optional {<' + res + '> l:gender  ?gen}' +
+            '    optional {<' + res + '> l:animacy ?an}' +
+            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '}';
+        let results = getResults(query);
+        if (results.length > 0) {
+            for (let i = 0; i < results.length; i++) {
+                let result = results[i];
+                // let label = result["lab"]["value"];
+                let gen = (containsKey(result, "gen"))
+                    ? result["gen"]["value"]
+                    : "";
+                let an = (containsKey(result, "an"))
+                    ? result["an"]["value"]
+                    : "";
+                appendEntry(base, toCzech("Noun") + ", " +
+                    toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an)));
+            }
+        }
+    } else if (level === 2) {
+        let query =
+            PREFIXES +
+            'SELECT ?lab ?c ?no ?gen ?an ' +
+            'WHERE { ' +
+            '    <' + res + '>  l:partOfSpeech l:Noun ; ' +
+            '                   rdfs:label     ?lab ; ' +
+            '                   l:case  ?c ; ' +
+            '                   l:number  ?no ; ' +
+            '                   l:gender  ?gen .' +
+            '    optional {<' + res + '> l:animacy ?an}' +
+            '    <' + base + '> dbn:describes ?posRes . ' +
+            '    ?posRes lemon:formVariant <' + res + '> . ' +
+            '}';
+        let results = getResults(query);
+        if (results.length === 1) {
+            let result = results[0];
+            // let label = result["lab"]["value"];
+            let c = (containsKey(result, "c"))
+                ? result["c"]["value"]
+                : "";
+            let no = (containsKey(result, "no"))
+                ? result["no"]["value"]
+                : "";
+            let gen = (containsKey(result, "gen"))
+                ? result["gen"]["value"]
+                : "";
+            let an = (containsKey(result, "an"))
+                ? result["an"]["value"]
+                : "";
+            appendEntry(base, toCzech("Noun") + ", " + toCzech(getOntoName(gen)) + " " +
+                toCzech(getOntoName(an)) + ", " + toCzech(getOntoName(no)) + ", " +
+                toCzech(getOntoName(c)) + " pád");
+        }
+    }
+}
+
+function extractAdjective(baseObj, res) {
+    let level = baseObj["level"];
+    let base = baseObj["base"];
+    if (level === 1) {
+        let query =
+            PREFIXES +
+            'SELECT ?pos ' +
+            'WHERE { ' +
+            '    <' + res + '>  l:partOfSpeech l:Adjective ; ' +
+            '                   l:partOfSpeech ?pos . ' +
+            '    FILTER (?pos != l:Adjective)' +
+            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '}';
+        let results = getResults(query);
+        if (results.length > 0) {
+            for (let i = 0; i < results.length; i++) {
+                let result = results[i];
+                // let types = getPOSTypesText(results, "Adjective");
+
+                appendEntry(base, toCzech("Adjective") + ", " + toCzech(getOntoName(result["pos"]["value"])));
+            }
+        }
+    } else if (level === 2) {
+        if (isCaseForm(res)) {
+            let query =
+                PREFIXES +
+                'SELECT ?lab ?c ?type ?no ?gen ?an ' +
+                'WHERE { ' +
+                '    <' + res + '> rdfs:label          ?lab ; ' +
+                '                  l:partOfSpeech      l:Adjective ; ' +
+                '    optional {<' + res + '> l:case  ?c} ' +
+                '    optional {<' + res + '> l:number  ?no} ' +
+                '    optional {<' + res + '> l:gender  ?gen} ' +
+                '    optional {<' + res + '> l:animacy ?an}' +
+                '    optional {<' + res + '> l:lexTermType ?type}' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let c = (containsKey(result, "c"))
+                    ? result["c"]["value"]
+                    : "";
+                let type = (containsKey(result, "type"))
+                    ? "short form"
+                    : "";
+                let no = (containsKey(result, "no"))
+                    ? result["no"]["value"]
+                    : "";
+                let gen = (containsKey(result, "gen"))
+                    ? result["gen"]["value"]
+                    : "";
+                let an = (containsKey(result, "an"))
+                    ? result["an"]["value"]
+                    : "";
+                let typeStr = (type === "")
+                    ? ""
+                    : " (" + toCzech(type) + ")";
+                appendEntry(base, toCzech("Adjective") + ", " + toCzech(getOntoName(no)) + ", " +
+                    toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an)) + ", " +
+                    toCzech(getOntoName(c)) + " pád " + typeStr);
+            }
+        } else if (isDegreeForm(res)) {
+            let query =
+                PREFIXES +
+                'SELECT ?lab ?deg ' +
+                'WHERE { ' +
+                '    <' + res + '> rdfs:label          ?lab ; ' +
+                '                  l:partOfSpeech      l:Adjective ; ' +
+                '    optional {<' + res + '> l:degree ?deg}' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let deg = (containsKey(results[0], "deg"))
+                    ? results[0]["deg"]["value"]
+                    : "";
+                appendEntry(base, toCzech("Adjective") + ", " + toCzech(getOntoName(deg)));
+            }
+        }
+    }
+}
+
+function isCaseForm(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?c' +
+        'WHERE { ' +
+        '    <' + res + '> l:case ?c .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
+
+function isDegreeForm(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?deg' +
+        'WHERE { ' +
+        '    <' + res + '> l:degree ?deg .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
+
+// common functions ===================================================================================
+
+function getPOS(res) {
     let posQuery =
         PREFIXES +
         'SELECT  ?pos ' +
         'WHERE { ' +
-        '    b:' + resName + ' l:partOfSpeech ?pos . ' +
+        '    <' + res + '> l:partOfSpeech ?pos . ' +
         '}';
     let results = getResults(posQuery);
     if (results.length > 0) {
-        return results["pos"];
+        return getPOSWithoutTypes(results);
     }
     return null;
 }
 
-function getPronunciationElement(pronunciations) {
-    let pronElement = "";
-    if (pronunciations > 0) {
-        pronElement = " (" + pronunciations.join(" / ") + "):";
-    }
-    return pronElement;
-}
-
-function getBase(res) {
-    let baseQuery =
-        PREFIXES +
-        'SELECT ?base ' +
-        'WHERE { ' +
-        '    optional {' +
-        '        ?base dbn:describes <' + res + '>' +
-        '    } ' +
-        '    optional { ' +
-        '        ?posRes    lemon:formVariant <' + res + ">." +
-        '        ?base      dbn:describes      ?posRes . ' +
-        '    }' +
-        '}';
-    let results = getResults(baseQuery);
-    if (results.length === 1) {
-        return results[0]["base"]["value"];
+function getPOSWithoutTypes(results) {
+    for (let i = 0; i < results.length; i++) {
+        let pos = results[0]["pos"]["value"];
+        if (isPOS(pos)) {
+            return pos;
+        }
     }
     return null;
 }
+
+function isPOS(string) {
+    let poses = ["Noun", "Adjective", "Pronoun", "Numeral", "Verb",
+        "Adverb", "Preposition", "Conjunction", "Particle", "Interjection"];
+    return (poses.indexOf(getOntoName(string)) >= 0);
+}
+
+// function getPOSTypesText(results, pos) {
+//     let types = [];
+//     for (let i = 0; i < results.length; i++) {
+//         let type = results[i]["pos"]["value"];
+//         if (!isPOS(type)) {
+//             types.push(getOntoName(type));
+//         }
+//     }
+//     return types.join(", ");
+// }
 
 function getPronunciations(base) {
     let pronQuery =
@@ -69,28 +274,51 @@ function getPronunciations(base) {
         '    <' + base + '> l:pronunciation ?pron . ' +
         '}';
     let results = getResults(pronQuery);
+    let pronunciations = [];
     if (results.length > 0) {
-        return results["pron"];
+        for (let i = 0; i < results.length; i++) {
+            pronunciations.push(results[i]["pron"]["value"]);
+        }
     }
-    return [];
+    return pronunciations;
 }
 
-function getNounBase(res) {
+function getBase(res) {
+    let baseQuery =
+        PREFIXES +
+        'SELECT ?base1 ?base2 ' +
+        'WHERE { ' +
+        '    optional {' +
+        '        ?base1 dbn:describes <' + res + '>' +
+        '    } ' +
+        '    optional { ' +
+        '        ?posRes    lemon:formVariant <' + res + '>.' +
+        '        ?base2      dbn:describes      ?posRes . ' +
+        '    }' +
+        '}';
+    let results = getResults(baseQuery);
+    let level, base;
+    if (results.length === 1) {
+        if (containsKey(results[0], "base1")) {
+            level = 1;
+            base = results[0]["base1"];
+        } else {
+            level = 2;
+            base = results[0]["base2"];
+        }
+    }
+    return {"level": level, "base": base["value"]};
+}
+
+function getLabel(res) {
     let query =
         PREFIXES +
-        'SELECT  ?base ?lab ?gen ?an ' +
-        'WHERE {' +
-        '' +
+        'SELECT ?lab ' +
+        'WHERE { ' +
+        '    <' + res + '> rdfs:label ?lab. ' +
         '}';
     let results = getResults(query);
-}
-
-function getPropertyName(property) {
-    return property.substring(property.lastIndexOf("#") + 1);
-}
-
-function getResourceName(resource) {
-    return resource.substring(resource.lastIndexOf("/") + 1);
+    return results[0]["lab"]["value"];
 }
 
 function getResources(word) {
@@ -103,7 +331,7 @@ function getResources(word) {
         '} ';
     let results = getResults(resQuery);
     let resources = [];
-    if (results !== undefined) {
+    if (results.length > 0) {
         for (let i = 0; i < results.length; i++) {
             resources.push(results[i]["res"]["value"]);
         }
@@ -137,8 +365,188 @@ function getResults(query) {
     return results;
 }
 
+
+// minor functions =====================================================================================
+
+function getResourceName(resource) {
+    return resource.substring(resource.lastIndexOf("/") + 1);
+}
+
+function getOntoName(property) {
+    return property.substring(property.lastIndexOf("#") + 1);
+}
+
+function getPronunciationElement(pronunciations) {
+    let pronElement = "";
+    if (pronunciations.length > 0) {
+        pronElement = " (<i>" + pronunciations.join(" / ") + "</i>):";
+    }
+    return pronElement;
+}
+
+function appendEntry(base, entry) {
+    appendID('<li class=\"entry\">' + entry + '</li>', "row-" + baseMap[base]);
+}
+
+function appendID(element, id) {
+    document.getElementById(id).innerHTML += element;
+}
+
 function appendElement(element) {
     document.body.innerHTML += element;
+}
+
+function containsKey(object, key) {
+    let keyVal = object[key];
+    return (keyVal !== undefined);
+}
+
+function getCaseOrder(caseName) {
+    let no;
+    switch (caseName) {
+        case "nominativeCase":
+            no = 1;
+            break;
+        case "genitiveCase":
+            no = 2;
+            break;
+        case "dativeCase":
+            no = 3;
+            break;
+        case "accusativeCase":
+            no = 4;
+            break;
+        case "vocativeCase":
+            no = 5;
+            break;
+        case "locativeCase":
+            no = 6;
+            break;
+        case "instrumentalCase":
+            no = 7;
+            break;
+        default:
+            no = -1;
+            break;
+    }
+    let caseStr;
+    switch (no) {
+        case 1:
+            caseStr = "" + no + "st";
+            break;
+        case 2:
+            caseStr = "" + no + "nd";
+            break;
+        case 3:
+            caseStr = "" + no + "rd";
+            break;
+        case -1:
+            caseStr = "";
+            break;
+        default:
+            caseStr = "" + no + "th";
+            break;
+    }
+    return caseStr;
+}
+
+function toCzech(word) {
+    switch (word) {
+        case "masculine" :
+            return "rod mužský";
+        case "feminine" :
+            return "rod ženský";
+        case "neuter" :
+            return "rod střední";
+        case "animate" :
+            return "životný";
+        case "inanimate" :
+            return "neživotný";
+        case "singular" :
+            return "jednotné č.";
+        case "plural" :
+            return "množné č.";
+        case "dual" :
+            return "duální č.";
+        case "nominativeCase" :
+            return "1.";
+        case "genitiveCase" :
+            return "2.";
+        case "dativeCase" :
+            return "3.";
+        case "accusativeCase" :
+            return "4.";
+        case "vocativeCase" :
+            return "5.";
+        case "locativeCase" :
+            return "6.";
+        case "instrumentalCase" :
+            return "7.";
+        case "Noun" :
+            return "podstatné jméno";
+        case "Adjective" :
+            return "přídavné jméno";
+        case "Pronoun" :
+            return "zájmeno";
+        case "Numeral" :
+            return "číslovka";
+        case "Verb" :
+            return "sloveso";
+        case "Adverb" :
+            return "příslovce";
+        case "Preposition" :
+            return "předložka";
+        case "Conjunction" :
+            return "spojka";
+        case "Particle" :
+            return "částice";
+        case  "Interjection" :
+            return "citoslovce";
+        case  "adjective-ý" :
+            return "tvrdé";
+        case  "adjective-í" :
+            return "měkké";
+        case "possessiveAdjective" :
+            return "přivlastňovací";
+        case "shortFormCzech" :
+            return "jmenný tvar";
+        case "positive" :
+            return "1. stupeň";
+        case "comparative" :
+            return "2. stupeň";
+        case "superlative" :
+            return "3. stupeň";
+        case "firstPerson" :
+            return "1. os.";
+        case "secondPerson" :
+            return "2. os.";
+        case "thirdPerson" :
+            return "3. os.";
+        case  "perfective" :
+            return "dokonavé";
+        case  "imperfective" :
+            return "nedokonavé";
+        case  "indicative" :
+            return "zp. oznamovací";
+        case  "imperative" :
+            return "zp. rozkazovací";
+        case  "infinitive" :
+            return "infinitiv";
+        case  "active" :
+            return "rod činný";
+        case  "passive" :
+            return "rod trpný";
+        case  "past" :
+            return "čas minulý";
+        case  "present" :
+            return "čas přítomný";
+        case  "future" :
+            return "čas budoucí";
+        case  "IntransitiveFrame" :
+            return "nepřechodné";
+        case  "TransitiveFrame" :
+            return "přechodné";
+    }
 }
 
 let PREFIXES = "PREFIX b: <http://www.example.com/> " +

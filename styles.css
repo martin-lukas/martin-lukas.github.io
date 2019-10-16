@@ -25,6 +25,9 @@ body {margin: 0; padding: 0; background-color: #ededed; font: 1.1em verdana, ari
 	text-align: center;
 }
 
+ul {margin: 0;}
+td {vertical-align: top}
+
 pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
 .string { color: green; }
 .number { color: darkorange; }

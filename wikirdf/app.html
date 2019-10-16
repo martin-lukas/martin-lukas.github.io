@@ -2,19 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Czech Descriptor</title>
+    <title>Lemmatizátor Wikislovníku</title>
     <link rel="stylesheet" type="text/css" href="../styles.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="script.js"></script>
 </head>
 <body>
-<h1>Czech Descriptor</h1>
-<p>This is the first czech descriptor of its kind. Type in a Czech word, and this program will
-    find and show you everything about this word.</p>
-<label for="word">Word:</label>
+<h1>Lemmatizátor Wikislovníku</h1>
+<p>Tento lemmatizátor je vytvořen z dat poskytnutých společností WikiMedia.</p>
+<label for="word">Hledej:</label>
 <input id="word" type="text">
-<input id="send" type="submit" value="Send" onclick="sendRequest();">
+<input id="send" type="submit" value="Odeslat" onclick="sendRequest();">
 <br><br>
+<div id="title"></div>
+<br>
+<table style="border:1px solid black;"><tbody id="tbody"></tbody></table>
 <script>
     // Enabling sending form with pressing ENTER in ZIP code text field
     var zipInput = document.getElementById("word");
