@@ -97,9 +97,12 @@ function extractNoun(baseObj, res) {
             let no = getValue(result, "no");
             let gen = getValue(result, "gen");
             let an = getValue(result, "an");
+            let genderStr = toCzech(getOntoName(gen));
+            if (an !== "") {
+                genderStr += " " + toCzech(getOntoName(an));
+            }
             appendEntry(base, toCzech("Noun") + ", " +
-                toCzech(getOntoName(gen)) + " " +
-                toCzech(getOntoName(an)) + ", " +
+                genderStr + ", " +
                 toCzech(getOntoName(no)) + ", " +
                 toCzech(getOntoName(c)) + " pád");
         }
@@ -131,22 +134,29 @@ function extractAdjective(baseObj, res) {
                 let result = results[0];
                 let c = getValue(result, "c");
                 let no = getValue(result, "no");
+
                 let gen = getValue(result, "gen");
                 let an = getValue(result, "an");
+
+                let genderStr = toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+
                 let type = getValue(result, "type");
                 if (type !== "") {
                     type = "(" + toCzech("short form") + ")";
                 }
+
                 appendEntry(base, toCzech("Adjective") + ", " +
                     toCzech(getOntoName(no)) + ", " +
-                    toCzech(getOntoName(gen)) + " " +
-                    toCzech(getOntoName(an)) + ", " +
+                    genderStr + ", " +
                     toCzech(getOntoName(c)) + " pád " + type);
             }
         } else if (isDegreeForm(res)) {
             let query =
                 PREFIXES +
-                'SELECT ?lab ?deg ' +
+                'SELECT ?deg ' +
                 'WHERE { ' +
                 '    <' + res + '> l:partOfSpeech      l:Adjective ; ' +
                 '    optional {<' + res + '> l:degree ?deg}' +
@@ -201,12 +211,6 @@ function getPOS(res) {
     return null;
 }
 
-function isPOS(string) {
-    let poses = ["Noun", "Adjective", "Pronoun", "Numeral", "Verb",
-        "Adverb", "Preposition", "Conjunction", "Particle", "Interjection"];
-    return (poses.indexOf(getOntoName(string)) >= 0);
-}
-
 function getPronunciations(base) {
     let pronQuery =
         PREFIXES +
@@ -243,7 +247,7 @@ function getBase(res) {
         let result = results[0];
         if (containsKey(result, "base1")) {
             level = 1;
-            base =  getValue(result, "base1");
+            base = getValue(result, "base1");
         } else {
             level = 2;
             base = getValue(result, "base2");
@@ -275,7 +279,7 @@ function getResources(word) {
     let resources = [];
     if (results.length > 0) {
         for (let i = 0; i < results.length; i++) {
-            resources.push(getValue(results[i]), "res");
+            resources.push(getValue(results[i], "res"));
         }
     }
     return resources;
@@ -315,7 +319,7 @@ function getResourceName(resource) {
 
 function getValue(result, key) {
     return (containsKey(result, key))
-        ? result["an"]["value"]
+        ? result[key]["value"]
         : "";
 }
 
