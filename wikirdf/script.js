@@ -49,6 +49,21 @@ function extractPOS(baseObj, res, pos) {
         case "Pronoun":
             extractPronoun(baseObj, res);
             break;
+        case "Numeral":
+            extractNumeral(baseObj, res);
+            break;
+        case "Verb":
+            break;
+        case "Adverb":
+            break;
+        case "Preposition":
+            break;
+        case "Conjunction":
+            break;
+        case "Particle":
+            break;
+        case "Interjection":
+            break;
     }
 }
 
@@ -241,7 +256,7 @@ function extractPronoun(baseObj, res) {
         } else {
             let query =
                 PREFIXES +
-                'SELECT ?c ?no ?gen ?an ' +
+                'SELECT ?c ?no ' +
                 'WHERE { ' +
                 '    <' + res + '>  l:partOfSpeech l:Pronoun ; ' +
                 '                   l:case  ?c ; ' +
@@ -259,6 +274,105 @@ function extractPronoun(baseObj, res) {
                 }
                 let c = getValue(result, "c");
                 appendEntry(base, toCzech("Pronoun") + ", " +
+                    noStr +
+                    toCzech(getOntoName(c)) + " pád");
+            }
+        }
+    }
+}
+
+function extractNumeral(baseObj, res) {
+    let level = baseObj["level"];
+    let base = baseObj["base"];
+    if (level === 1) {
+        let query =
+            PREFIXES +
+            'SELECT ?no ?gen ?an ' +
+            'WHERE { ' +
+            '    <' + res + '>  l:partOfSpeech l:Numeral . ' +
+            '    optional {<' + res + '> l:gender  ?gen}' +
+            '    optional {<' + res + '> l:animacy ?an}' +
+            '    optional {<' + res + '> l:number ?no}' +
+            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '}';
+        let results = getResults(query);
+        if (results.length > 0) {
+            for (let i = 0; i < results.length; i++) {
+                let result = results[i];
+                let no = getValue(result, "no");
+                let noStr = "";
+                if (no !== "") {
+                    noStr = ", " + toCzech(getOntoName(no));
+                }
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+                let genderStr = ", " + toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+                appendEntry(base, toCzech("Numeral") + noStr + genderStr);
+            }
+        }
+    } else if (level === 2) {
+        if ((isExtendedDeclension(res))) {
+            let query =
+                PREFIXES +
+                'SELECT ?c ?type ?no ?gen ?an ' +
+                'WHERE { ' +
+                '    <' + res + '> l:partOfSpeech      l:Numeral ; ' +
+                '    optional {<' + res + '> l:case  ?c} ' +
+                '    optional {<' + res + '> l:number  ?no} ' +
+                '    optional {<' + res + '> l:gender  ?gen} ' +
+                '    optional {<' + res + '> l:animacy ?an}' +
+                '    optional {<' + res + '> l:lexTermType ?type}' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let c = getValue(result, "c");
+                let no = getValue(result, "no");
+
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+
+                let genderStr = toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+
+                let type = getValue(result, "type");
+                if (type !== "") {
+                    type = "(" + toCzech("short form") + ")";
+                }
+
+                appendEntry(base, toCzech("Numeral") + ", " +
+                    toCzech(getOntoName(no)) + ", " +
+                    genderStr + ", " +
+                    toCzech(getOntoName(c)) + " pád " + type);
+            }
+        } else {
+            let query =
+                PREFIXES +
+                'SELECT ?c ?no ' +
+                'WHERE { ' +
+                '    <' + res + '>  l:partOfSpeech l:Numeral ; ' +
+                '                   l:case  ?c ; ' +
+                '    optional {<' + res + '> l:number  ?no} ' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let no = getValue(result, "no");
+                let noStr = "";
+                if (no !== "") {
+                    noStr = toCzech(getOntoName(no)) + ", ";
+                }
+                let c = getValue(result, "c");
+                appendEntry(base, toCzech("Numeral") + ", " +
                     noStr +
                     toCzech(getOntoName(c)) + " pád");
             }
