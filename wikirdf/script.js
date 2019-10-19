@@ -61,8 +61,7 @@ function extractNoun(baseObj, res) {
             PREFIXES +
             'SELECT ?lab ?gen ?an ' +
             'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Noun ; ' +
-            '                   rdfs:label     ?lab . ' +
+            '    <' + res + '>  l:partOfSpeech l:Noun . ' +
             '    optional {<' + res + '> l:gender  ?gen}' +
             '    optional {<' + res + '> l:animacy ?an}' +
             '    <' + base + '> dbn:describes <' + res + '> .' +
@@ -71,15 +70,11 @@ function extractNoun(baseObj, res) {
         if (results.length > 0) {
             for (let i = 0; i < results.length; i++) {
                 let result = results[i];
-                // let label = result["lab"]["value"];
-                let gen = (containsKey(result, "gen"))
-                    ? result["gen"]["value"]
-                    : "";
-                let an = (containsKey(result, "an"))
-                    ? result["an"]["value"]
-                    : "";
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
                 appendEntry(base, toCzech("Noun") + ", " +
-                    toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an)));
+                    toCzech(getOntoName(gen)) + " " +
+                    toCzech(getOntoName(an)));
             }
         }
     } else if (level === 2) {
@@ -88,7 +83,6 @@ function extractNoun(baseObj, res) {
             'SELECT ?lab ?c ?no ?gen ?an ' +
             'WHERE { ' +
             '    <' + res + '>  l:partOfSpeech l:Noun ; ' +
-            '                   rdfs:label     ?lab ; ' +
             '                   l:case  ?c ; ' +
             '                   l:number  ?no ; ' +
             '                   l:gender  ?gen .' +
@@ -99,21 +93,14 @@ function extractNoun(baseObj, res) {
         let results = getResults(query);
         if (results.length === 1) {
             let result = results[0];
-            // let label = result["lab"]["value"];
-            let c = (containsKey(result, "c"))
-                ? result["c"]["value"]
-                : "";
-            let no = (containsKey(result, "no"))
-                ? result["no"]["value"]
-                : "";
-            let gen = (containsKey(result, "gen"))
-                ? result["gen"]["value"]
-                : "";
-            let an = (containsKey(result, "an"))
-                ? result["an"]["value"]
-                : "";
-            appendEntry(base, toCzech("Noun") + ", " + toCzech(getOntoName(gen)) + " " +
-                toCzech(getOntoName(an)) + ", " + toCzech(getOntoName(no)) + ", " +
+            let c = getValue(result, "c");
+            let no = getValue(result, "no");
+            let gen = getValue(result, "gen");
+            let an = getValue(result, "an");
+            appendEntry(base, toCzech("Noun") + ", " +
+                toCzech(getOntoName(gen)) + " " +
+                toCzech(getOntoName(an)) + ", " +
+                toCzech(getOntoName(no)) + ", " +
                 toCzech(getOntoName(c)) + " pád");
         }
     }
@@ -123,32 +110,14 @@ function extractAdjective(baseObj, res) {
     let level = baseObj["level"];
     let base = baseObj["base"];
     if (level === 1) {
-        let query =
-            PREFIXES +
-            'SELECT ?pos ' +
-            'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Adjective ; ' +
-            '                   l:partOfSpeech ?pos . ' +
-            '    FILTER (?pos != l:Adjective)' +
-            '    <' + base + '> dbn:describes <' + res + '> .' +
-            '}';
-        let results = getResults(query);
-        if (results.length > 0) {
-            for (let i = 0; i < results.length; i++) {
-                let result = results[i];
-                // let types = getPOSTypesText(results, "Adjective");
-
-                appendEntry(base, toCzech("Adjective") + ", " + toCzech(getOntoName(result["pos"]["value"])));
-            }
-        }
+        appendEntry(base, toCzech("Adjective"));
     } else if (level === 2) {
         if (isCaseForm(res)) {
             let query =
                 PREFIXES +
-                'SELECT ?lab ?c ?type ?no ?gen ?an ' +
+                'SELECT ?c ?type ?no ?gen ?an ' +
                 'WHERE { ' +
-                '    <' + res + '> rdfs:label          ?lab ; ' +
-                '                  l:partOfSpeech      l:Adjective ; ' +
+                '    <' + res + '> l:partOfSpeech      l:Adjective ; ' +
                 '    optional {<' + res + '> l:case  ?c} ' +
                 '    optional {<' + res + '> l:number  ?no} ' +
                 '    optional {<' + res + '> l:gender  ?gen} ' +
@@ -160,49 +129,40 @@ function extractAdjective(baseObj, res) {
             let results = getResults(query);
             if (results.length === 1) {
                 let result = results[0];
-                let c = (containsKey(result, "c"))
-                    ? result["c"]["value"]
-                    : "";
-                let type = (containsKey(result, "type"))
-                    ? "short form"
-                    : "";
-                let no = (containsKey(result, "no"))
-                    ? result["no"]["value"]
-                    : "";
-                let gen = (containsKey(result, "gen"))
-                    ? result["gen"]["value"]
-                    : "";
-                let an = (containsKey(result, "an"))
-                    ? result["an"]["value"]
-                    : "";
-                let typeStr = (type === "")
-                    ? ""
-                    : " (" + toCzech(type) + ")";
-                appendEntry(base, toCzech("Adjective") + ", " + toCzech(getOntoName(no)) + ", " +
-                    toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an)) + ", " +
-                    toCzech(getOntoName(c)) + " pád " + typeStr);
+                let c = getValue(result, "c");
+                let no = getValue(result, "no");
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+                let type = getValue(result, "type");
+                if (type !== "") {
+                    type = "(" + toCzech("short form") + ")";
+                }
+                appendEntry(base, toCzech("Adjective") + ", " +
+                    toCzech(getOntoName(no)) + ", " +
+                    toCzech(getOntoName(gen)) + " " +
+                    toCzech(getOntoName(an)) + ", " +
+                    toCzech(getOntoName(c)) + " pád " + type);
             }
         } else if (isDegreeForm(res)) {
             let query =
                 PREFIXES +
                 'SELECT ?lab ?deg ' +
                 'WHERE { ' +
-                '    <' + res + '> rdfs:label          ?lab ; ' +
-                '                  l:partOfSpeech      l:Adjective ; ' +
+                '    <' + res + '> l:partOfSpeech      l:Adjective ; ' +
                 '    optional {<' + res + '> l:degree ?deg}' +
                 '    <' + base + '> dbn:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
             if (results.length === 1) {
-                let deg = (containsKey(results[0], "deg"))
-                    ? results[0]["deg"]["value"]
-                    : "";
+                let deg = getValue(results[0], "deg");
                 appendEntry(base, toCzech("Adjective") + ", " + toCzech(getOntoName(deg)));
             }
         }
     }
 }
+
+
 
 function isCaseForm(res) {
     let query =
@@ -373,6 +333,12 @@ function getResults(query) {
 
 function getResourceName(resource) {
     return resource.substring(resource.lastIndexOf("/") + 1);
+}
+
+function getValue(result, key) {
+    return (containsKey(result, key))
+        ? result["an"]["value"]
+        : "";
 }
 
 function getOntoName(property) {
