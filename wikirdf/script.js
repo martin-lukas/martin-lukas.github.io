@@ -163,7 +163,6 @@ function extractAdjective(baseObj, res) {
 }
 
 
-
 function isCaseForm(res) {
     let query =
         PREFIXES +
@@ -197,17 +196,7 @@ function getPOS(res) {
         '}';
     let results = getResults(posQuery);
     if (results.length > 0) {
-        return getPOSWithoutTypes(results);
-    }
-    return null;
-}
-
-function getPOSWithoutTypes(results) {
-    for (let i = 0; i < results.length; i++) {
-        let pos = results[0]["pos"]["value"];
-        if (isPOS(pos)) {
-            return pos;
-        }
+        return getValue(results[0], "pos");
     }
     return null;
 }
@@ -217,17 +206,6 @@ function isPOS(string) {
         "Adverb", "Preposition", "Conjunction", "Particle", "Interjection"];
     return (poses.indexOf(getOntoName(string)) >= 0);
 }
-
-// function getPOSTypesText(results, pos) {
-//     let types = [];
-//     for (let i = 0; i < results.length; i++) {
-//         let type = results[i]["pos"]["value"];
-//         if (!isPOS(type)) {
-//             types.push(getOntoName(type));
-//         }
-//     }
-//     return types.join(", ");
-// }
 
 function getPronunciations(base) {
     let pronQuery =
@@ -262,15 +240,16 @@ function getBase(res) {
     let results = getResults(baseQuery);
     let level, base;
     if (results.length === 1) {
-        if (containsKey(results[0], "base1")) {
+        let result = results[0];
+        if (containsKey(result, "base1")) {
             level = 1;
-            base = results[0]["base1"];
+            base =  getValue(result, "base1");
         } else {
             level = 2;
-            base = results[0]["base2"];
+            base = getValue(result, "base2");
         }
     }
-    return {"level": level, "base": base["value"]};
+    return {"level": level, "base": base};
 }
 
 function getLabel(res) {
@@ -281,7 +260,7 @@ function getLabel(res) {
         '    <' + res + '> rdfs:label ?lab. ' +
         '}';
     let results = getResults(query);
-    return results[0]["lab"]["value"];
+    return getValue(results[0], "lab");
 }
 
 function getResources(word) {
@@ -290,13 +269,13 @@ function getResources(word) {
         'SELECT ?res ' +
         'WHERE { ' +
         '    ?res rdfs:label \"' + word + '\"@cs ;' +
-        '         a          lemon:LexicalEntry .' +
+        '         a          lemon:Word .' +
         '} ';
     let results = getResults(resQuery);
     let resources = [];
     if (results.length > 0) {
         for (let i = 0; i < results.length; i++) {
-            resources.push(results[i]["res"]["value"]);
+            resources.push(getValue(results[i]), "res");
         }
     }
     return resources;
@@ -327,7 +306,6 @@ function getResults(query) {
 
     return results;
 }
-
 
 // minor functions =====================================================================================
 
