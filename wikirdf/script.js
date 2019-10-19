@@ -46,9 +46,10 @@ function extractPOS(baseObj, res, pos) {
         case "Adjective":
             extractAdjective(baseObj, res);
             break;
+        case "Pronoun":
+            extractPronoun(baseObj, res);
+            break;
     }
-    // TODO before adding new ones, create a new branch called... implementing pronouns or something
-    // and then merge the branches
 }
 
 // POS specific functions =============================================================================
@@ -59,7 +60,7 @@ function extractNoun(baseObj, res) {
     if (level === 1) {
         let query =
             PREFIXES +
-            'SELECT ?lab ?gen ?an ' +
+            'SELECT ?gen ?an ' +
             'WHERE { ' +
             '    <' + res + '>  l:partOfSpeech l:Noun . ' +
             '    optional {<' + res + '> l:gender  ?gen}' +
@@ -80,7 +81,7 @@ function extractNoun(baseObj, res) {
     } else if (level === 2) {
         let query =
             PREFIXES +
-            'SELECT ?lab ?c ?no ?gen ?an ' +
+            'SELECT ?c ?no ?gen ?an ' +
             'WHERE { ' +
             '    <' + res + '>  l:partOfSpeech l:Noun ; ' +
             '                   l:case  ?c ; ' +
@@ -172,6 +173,100 @@ function extractAdjective(baseObj, res) {
     }
 }
 
+function extractPronoun(baseObj, res) {
+    let level = baseObj["level"];
+    let base = baseObj["base"];
+    if (level === 1) {
+        let query =
+            PREFIXES +
+            'SELECT ?gen ?an ' +
+            'WHERE { ' +
+            '    <' + res + '>  l:partOfSpeech l:Pronoun . ' +
+            '    optional {<' + res + '> l:gender  ?gen}' +
+            '    optional {<' + res + '> l:animacy ?an}' +
+            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '}';
+        let results = getResults(query);
+        if (results.length > 0) {
+            for (let i = 0; i < results.length; i++) {
+                let result = results[i];
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+                let genderStr = ", " + toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+                appendEntry(base, toCzech("Pronoun") + genderStr);
+            }
+        }
+    } else if (level === 2) {
+        if ((isExtendedDeclension(res))) {
+            let query =
+                PREFIXES +
+                'SELECT ?c ?type ?no ?gen ?an ' +
+                'WHERE { ' +
+                '    <' + res + '> l:partOfSpeech      l:Pronoun ; ' +
+                '    optional {<' + res + '> l:case  ?c} ' +
+                '    optional {<' + res + '> l:number  ?no} ' +
+                '    optional {<' + res + '> l:gender  ?gen} ' +
+                '    optional {<' + res + '> l:animacy ?an}' +
+                '    optional {<' + res + '> l:lexTermType ?type}' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let c = getValue(result, "c");
+                let no = getValue(result, "no");
+
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+
+                let genderStr = toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+
+                let type = getValue(result, "type");
+                if (type !== "") {
+                    type = "(" + toCzech("short form") + ")";
+                }
+
+                appendEntry(base, toCzech("Pronoun") + ", " +
+                    toCzech(getOntoName(no)) + ", " +
+                    genderStr + ", " +
+                    toCzech(getOntoName(c)) + " pád " + type);
+            }
+        } else {
+            let query =
+                PREFIXES +
+                'SELECT ?c ?no ?gen ?an ' +
+                'WHERE { ' +
+                '    <' + res + '>  l:partOfSpeech l:Pronoun ; ' +
+                '                   l:case  ?c ; ' +
+                '    optional {<' + res + '> l:number  ?no} ' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let no = getValue(result, "no");
+                let noStr = "";
+                if (no !== "") {
+                    noStr = toCzech(getOntoName(no)) + ", ";
+                }
+                let c = getValue(result, "c");
+                appendEntry(base, toCzech("Pronoun") + ", " +
+                    noStr +
+                    toCzech(getOntoName(c)) + " pád");
+            }
+        }
+    }
+}
+
+// common functions ===================================================================================
 
 function isCaseForm(res) {
     let query =
@@ -195,7 +290,16 @@ function isDegreeForm(res) {
     return (results.length === 1);
 }
 
-// common functions ===================================================================================
+function isExtendedDeclension(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?gen' +
+        'WHERE { ' +
+        '    <' + res + '> l:gender ?gen .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
 
 function getPOS(res) {
     let posQuery =
