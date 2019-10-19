@@ -13,7 +13,7 @@ function sendRequest() {
 function extract(word) {
     let title = document.getElementById("title");
     let resources = getResources(word);
-    title.innerHTML = "<b>Základní tvary pro \'" + word + ":</b>";
+    title.innerHTML = "<b>Základní tvary pro \'" + word + "\':</b>";
     for (let i = 0; i < resources.length; i++) {
         console.log("Extracting resource: " + resources[i]);
         extractResource(resources[i]);
@@ -53,16 +53,22 @@ function extractPOS(baseObj, res, pos) {
             extractNumeral(baseObj, res);
             break;
         case "Verb":
+            extractVerb(baseObj, res);
             break;
         case "Adverb":
+            extractAdverb(baseObj, res);
             break;
         case "Preposition":
+            extractPreposition(baseObj, res);
             break;
         case "Conjunction":
+            extractConjunction(baseObj, res);
             break;
         case "Particle":
+            extractParticle(baseObj, res);
             break;
         case "Interjection":
+            extractInterjection(baseObj, res);
             break;
     }
 }
@@ -207,9 +213,12 @@ function extractPronoun(baseObj, res) {
                 let result = results[i];
                 let gen = getValue(result, "gen");
                 let an = getValue(result, "an");
-                let genderStr = ", " + toCzech(getOntoName(gen));
-                if (an !== "") {
-                    genderStr += " " + toCzech(getOntoName(an));
+                let genderStr = "";
+                if (gen !== "") {
+                    genderStr += ", " + toCzech(getOntoName(gen));
+                    if (an !== "") {
+                        genderStr += " " + toCzech(getOntoName(an));
+                    }
                 }
                 appendEntry(base, toCzech("Pronoun") + genderStr);
             }
@@ -270,11 +279,11 @@ function extractPronoun(baseObj, res) {
                 let no = getValue(result, "no");
                 let noStr = "";
                 if (no !== "") {
-                    noStr = toCzech(getOntoName(no)) + ", ";
+                    noStr = ", " + toCzech(getOntoName(no));
                 }
                 let c = getValue(result, "c");
-                appendEntry(base, toCzech("Pronoun") + ", " +
-                    noStr +
+                appendEntry(base, toCzech("Pronoun") +
+                    noStr + ", " +
                     toCzech(getOntoName(c)) + " pád");
             }
         }
@@ -378,6 +387,196 @@ function extractNumeral(baseObj, res) {
             }
         }
     }
+}
+
+function extractVerb(baseObj, res) {
+    let level = baseObj["level"];
+    let base = baseObj["base"];
+    if (level === 1) {
+        let query =
+            PREFIXES +
+            'SELECT ?mood ' +
+            'WHERE { ' +
+            '    <' + res + '>  l:partOfSpeech l:Verb . ' +
+            '    optional {<' + res + '> l:verbFormMood ?mood} ' +
+            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '}';
+        let results = getResults(query);
+        if (results.length === 1) {
+            let mood = getValue(results[0], "mood");
+            let moodStr = "";
+            if (mood !== "") {
+                moodStr = ", " + toCzech(getOntoName(mood))
+            }
+            appendEntry(base, toCzech("Verb") + moodStr);
+        }
+    } else if (level === 2) {
+        if (isVerbMood(res)) {
+            let query =
+                PREFIXES +
+                'SELECT ?mood ?tense ?no ?person ' +
+                'WHERE { ' +
+                '    <' + res + '> l:partOfSpeech  l:Verb ; ' +
+                '                  l:verbFormMood  ?mood ;' +
+                '                  l:tense         ?tense ;' +
+                '                  l:number        ?no ;' +
+                '                  l:person        ?person .' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let mood = getValue(result, "mood");
+                let tense = getValue(result, "tense");
+                let no = getValue(result, "no");
+                let person = getValue(result, "person");
+
+                appendEntry(base, toCzech("Verb") + ", " +
+                    toCzech(getOntoName(mood)) + ", " +
+                    toCzech(getOntoName(tense)) + ", " +
+                    toCzech(getOntoName(no)) + ", " +
+                    toCzech(getOntoName(person)));
+            }
+        } else if (isVerbParticiple(res)) {
+            let query =
+                PREFIXES +
+                'SELECT ?voice ?no ?gen ?an ' +
+                'WHERE { ' +
+                '    <' + res + '> l:partOfSpeech  l:Verb ; ' +
+                '                  l:voice         ?voice ;' +
+                '                  l:number        ?no ;' +
+                '                  l:gender        ?gen ;' +
+                '    optional {<' + res + '> l:animacy ?an }' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let voice = getValue(result, "voice");
+                let no = getValue(result, "no");
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+                let genderStr = ", " + toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+
+                appendEntry(base, toCzech("Verb") + ", " +
+                    toCzech(getOntoName(voice)) + ", " +
+                    toCzech(getOntoName(no)) +
+                    genderStr);
+            }
+        } else if (isVerbTransgressive(res)) {
+            let query =
+                PREFIXES +
+                'SELECT ?tense ?no ?gen ?an ' +
+                'WHERE { ' +
+                '    <' + res + '> l:partOfSpeech        l:Verb ; ' +
+                '                  lemon:lexicalVariant  ex-onto:transgressive ;' +
+                '                  l:tense               ?tense ;' +
+                '                  l:number              ?no ;' +
+                '                  l:gender              ?gen ;' +
+                '    optional {<' + res + '> l:animacy ?an }' +
+                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    ?posRes lemon:formVariant <' + res + '> . ' +
+                '}';
+            let results = getResults(query);
+            if (results.length === 1) {
+                let result = results[0];
+                let tense = getValue(result, "tense");
+                let no = getValue(result, "no");
+                let gen = getValue(result, "gen");
+                let an = getValue(result, "an");
+                let genderStr = ", " + toCzech(getOntoName(gen));
+                if (an !== "") {
+                    genderStr += " " + toCzech(getOntoName(an));
+                }
+
+                appendEntry(base, toCzech("Verb") + ", přechodník, " +
+                    toCzech(getOntoName(tense)) + ", " +
+                    toCzech(getOntoName(no)) +
+                    genderStr);
+            }
+        }
+    }
+}
+
+function isVerbMood(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?mood ' +
+        'WHERE { ' +
+        '    <' + res + '> l:verbFormMood ?mood .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
+
+function isVerbParticiple(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?voice ' +
+        'WHERE { ' +
+        '    <' + res + '> l:voice ?voice .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
+
+function isVerbTransgressive(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?var ' +
+        'WHERE { ' +
+        '    <' + res + '> lemon:lexicalVariant ?var .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1 && getValue(results[0], "var") !== "");
+}
+
+function extractAdverb(baseObj, res) {
+    let level = baseObj["level"];
+    let base = baseObj["base"];
+    if (level === 1) {
+        appendEntry(base, toCzech("Adverb"));
+    } else if (level === 2) {
+        let query =
+            PREFIXES +
+            'SELECT ?deg ' +
+            'WHERE { ' +
+            '    <' + res + '> l:partOfSpeech      l:Adverb ; ' +
+            '    optional {<' + res + '> l:degree ?deg}' +
+            '    <' + base + '> dbn:describes ?posRes . ' +
+            '    ?posRes lemon:formVariant <' + res + '> . ' +
+            '}';
+        let results = getResults(query);
+        if (results.length === 1) {
+            let deg = getValue(results[0], "deg");
+            appendEntry(base, toCzech("Adverb") + ", " + toCzech(getOntoName(deg)));
+        }
+    }
+}
+
+function extractPreposition(baseObj, res) {
+    let base = baseObj["base"];
+    appendEntry(base, toCzech("Preposition"));
+}
+
+function extractConjunction(baseObj, res) {
+    let base = baseObj["base"];
+    appendEntry(base, toCzech("Conjunction"));
+}
+
+function extractParticle(baseObj, res) {
+    let base = baseObj["base"];
+    appendEntry(base, toCzech("Particle"));
+}
+
+function extractInterjection(baseObj, res) {
+    let base = baseObj["base"];
+    appendEntry(base, toCzech("Interjection"));
 }
 
 // common functions ===================================================================================
@@ -715,13 +914,15 @@ function toCzech(word) {
             return "nepřechodné";
         case  "TransitiveFrame" :
             return "přechodné";
+        case "transgressive":
+            return "přechodník";
         default:
             return word;
     }
 }
 
-let PREFIXES = "PREFIX b: <http://www.example.com/> " +
-    "PREFIX onto: <http://www.example.com/ontology#> " +
+let PREFIXES = "PREFIX ex: <http://www.example.com/> " +
+    "PREFIX ex-onto: <http://www.example.com/ontology#> " +
     "PREFIX lemon: <http://lemon-model.net/lemon#> " +
     "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
     "PREFIX wiki: <http://cs.wiktionary.org/wiki/> " +
