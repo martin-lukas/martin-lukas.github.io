@@ -418,9 +418,9 @@ function extractVerb(baseObj, res) {
                 'WHERE { ' +
                 '    <' + res + '> l:partOfSpeech  l:Verb ; ' +
                 '                  l:verbFormMood  ?mood ;' +
-                '                  l:tense         ?tense ;' +
                 '                  l:number        ?no ;' +
                 '                  l:person        ?person .' +
+                '    optional {<' + res + '> l:tense ?tense}' +
                 '    <' + base + '> dbn:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
