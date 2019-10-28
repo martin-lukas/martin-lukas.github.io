@@ -138,10 +138,9 @@ function extractNoun(baseObj, res) {
                 let result = results[i];
                 let gen = getValue(result, "gen");
                 let an = getValue(result, "an");
-                appendEntryPlusTable(
+                appendEntry(
                     base,
-                    toCzech("Noun") + ", " + toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an)),
-                    generateNormalDeclensionTable(res, "Noun")
+                    toCzech("Noun") + ", " + toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an))
                 );
             }
         }
@@ -592,33 +591,6 @@ function extractInterjection(baseObj, res) {
     appendEntry(base, toCzech("Interjection"));
 }
 
-
-// unfinished
-function generateNormalDeclensionTable(res, posName) {
-    let varObj = {};
-
-    let variants = getFormVariants(res,  posName);
-    for (let i = 0; i < variants.length; i++) {
-        let query =
-            PREFIXES +
-            'SELECT ?lab ?no ?case ' +
-            'WHERE { ' +
-            '    <' + variants[i] + '> rdfs:label   ?lab ;' +
-            '                          lexinfo:no   ?no ;' +
-            '                          lexinfo:case ?case . ' +
-            '}';
-        let results = getResults(query);
-        for (let j = 0; j < results.length; j++) {
-            let lab = getValue(results[j], "lab");
-            let no = getValue(results[j], "no");
-            let aCase = getValue(results[j], "case");
-
-        }
-    }
-    return "";
-}
-
-
 function isVerbMood(res) {
     let query =
         PREFIXES +
@@ -653,24 +625,6 @@ function isVerbTransgressive(res) {
 }
 
 // common functions ===================================================================================
-
-function getFormVariants(res, posName) {
-    let query =
-        PREFIXES +
-        'SELECT ?var ' +
-        'WHERE { ' +
-        '    <' + res + '> lexinfo:partOfSpeech lexinfo:' + posName + ' ; ' +
-        '                  lemon:formVariant    ?var .' +
-        '}';
-    let results = getResults(query);
-    let variants = [];
-    if (results.length > 0) {
-        for (let i = 0; i < results.length; i++) {
-            variants.push(getValue(results[i], "var"));
-        }
-    }
-    return variants;
-}
 
 function isCaseForm(res) {
     let query =
@@ -803,10 +757,6 @@ function appendEntry(base, entry) {
     appendID('<li class=\"entry\">' + entry + '</li>', "row-" + baseMap[base]);
 }
 
-function appendEntryPlusTable(base, entry, table) {
-    appendEntry(base, entry + table);
-}
-
 function appendID(element, id) {
     document.getElementById(id).innerHTML += element;
 }
@@ -814,28 +764,6 @@ function appendID(element, id) {
 function containsKey(object, key) {
     let keyVal = object[key];
     return (keyVal !== undefined);
-}
-
-
-function getCaseName(number) {
-    switch (number) {
-        case 1:
-            return "nominative";
-        case 2:
-            return "genitive";
-        case 3:
-            return "dative";
-        case 4:
-            return "accusative";
-        case 5:
-            return "vocative";
-        case 6:
-            return "locative";
-        case 7:
-            return "instrumental";
-        default:
-            return "";
-    }
 }
 
 function getCaseOrder(caseName) {
