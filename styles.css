@@ -27,6 +27,10 @@ body {margin: 0; padding: 0; background-color: #ededed; font: 1.1em verdana, ari
 
 ul {margin: 0;}
 td {vertical-align: top}
+textarea {
+	width: 600px;
+	height: 300px;
+}
 
 pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
 .string { color: green; }

@@ -20,6 +20,50 @@ function extract(word) {
     }
 }
 
+function getResources(word) {
+    let resQuery =
+        PREFIXES +
+        'SELECT ?res ' +
+        'WHERE { ' +
+        '    ?res rdfs:label \"' + word + '\"@cs ;' +
+        '         a          lemon:LexicalEntry .' +
+        '} ';
+    let results = getResults(resQuery);
+    let resources = [];
+    if (results.length > 0) {
+        for (let i = 0; i < results.length; i++) {
+            resources.push(getValue(results[i], "res"));
+        }
+    }
+    return resources;
+}
+
+function getResults(query) {
+    let endpoint = "http://localhost:3030/wiki/sparql";
+    let params = "?query=" + encodeURIComponent(query) + "&format=json";
+
+    let result;
+    let http = new XMLHttpRequest();
+    http.open("GET", endpoint + params, false);
+    http.onreadystatechange = function () {
+        if (http.readyState === 4) {
+            result = http.responseText;
+        }
+    };
+    http.send();
+    let results;
+    if (result !== undefined) {
+        // console.log(result);
+        let resultObj = JSON.parse(result);
+        results = resultObj["results"]["bindings"];
+    }
+    if (results === undefined || results === null) {
+        results = [];
+    }
+
+    return results;
+}
+
 function extractResource(resource) {
     let baseObj = getBase(resource);
     let base = baseObj["base"];
@@ -83,10 +127,10 @@ function extractNoun(baseObj, res) {
             PREFIXES +
             'SELECT ?gen ?an ' +
             'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Noun . ' +
-            '    optional {<' + res + '> l:gender  ?gen}' +
-            '    optional {<' + res + '> l:animacy ?an}' +
-            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Noun . ' +
+            '    optional {<' + res + '> lexinfo:gender  ?gen}' +
+            '    optional {<' + res + '> lexinfo:animacy ?an}' +
+            '    <' + base + '> dbnary:describes <' + res + '> .' +
             '}';
         let results = getResults(query);
         if (results.length > 0) {
@@ -94,9 +138,11 @@ function extractNoun(baseObj, res) {
                 let result = results[i];
                 let gen = getValue(result, "gen");
                 let an = getValue(result, "an");
-                appendEntry(base, toCzech("Noun") + ", " +
-                    toCzech(getOntoName(gen)) + " " +
-                    toCzech(getOntoName(an)));
+                appendEntryPlusTable(
+                    base,
+                    toCzech("Noun") + ", " + toCzech(getOntoName(gen)) + " " + toCzech(getOntoName(an)),
+                    generateNormalDeclensionTable(res, "Noun")
+                );
             }
         }
     } else if (level === 2) {
@@ -104,12 +150,12 @@ function extractNoun(baseObj, res) {
             PREFIXES +
             'SELECT ?c ?no ?gen ?an ' +
             'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Noun ; ' +
-            '                   l:case  ?c ; ' +
-            '                   l:number  ?no ; ' +
-            '                   l:gender  ?gen .' +
-            '    optional {<' + res + '> l:animacy ?an}' +
-            '    <' + base + '> dbn:describes ?posRes . ' +
+            '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Noun ; ' +
+            '                   lexinfo:case  ?c ; ' +
+            '                   lexinfo:number  ?no ; ' +
+            '                   lexinfo:gender  ?gen .' +
+            '    optional {<' + res + '> lexinfo:animacy ?an}' +
+            '    <' + base + '> dbnary:describes ?posRes . ' +
             '    ?posRes lemon:formVariant <' + res + '> . ' +
             '}';
         let results = getResults(query);
@@ -142,13 +188,13 @@ function extractAdjective(baseObj, res) {
                 PREFIXES +
                 'SELECT ?c ?type ?no ?gen ?an ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech      l:Adjective ; ' +
-                '    optional {<' + res + '> l:case  ?c} ' +
-                '    optional {<' + res + '> l:number  ?no} ' +
-                '    optional {<' + res + '> l:gender  ?gen} ' +
-                '    optional {<' + res + '> l:animacy ?an}' +
-                '    optional {<' + res + '> l:lexTermType ?type}' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '> lexinfo:partOfSpeech      lexinfo:Adjective ; ' +
+                '    optional {<' + res + '> lexinfo:case  ?c} ' +
+                '    optional {<' + res + '> lexinfo:number  ?no} ' +
+                '    optional {<' + res + '> lexinfo:gender  ?gen} ' +
+                '    optional {<' + res + '> lexinfo:animacy ?an}' +
+                '    optional {<' + res + '> lexinfo:lexTermType ?type}' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -180,9 +226,9 @@ function extractAdjective(baseObj, res) {
                 PREFIXES +
                 'SELECT ?deg ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech      l:Adjective ; ' +
-                '    optional {<' + res + '> l:degree ?deg}' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '> lexinfo:partOfSpeech      lexinfo:Adjective ; ' +
+                '    optional {<' + res + '> lexinfo:degree ?deg}' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -202,10 +248,10 @@ function extractPronoun(baseObj, res) {
             PREFIXES +
             'SELECT ?gen ?an ' +
             'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Pronoun . ' +
-            '    optional {<' + res + '> l:gender  ?gen}' +
-            '    optional {<' + res + '> l:animacy ?an}' +
-            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Pronoun . ' +
+            '    optional {<' + res + '> lexinfo:gender  ?gen}' +
+            '    optional {<' + res + '> lexinfo:animacy ?an}' +
+            '    <' + base + '> dbnary:describes <' + res + '> .' +
             '}';
         let results = getResults(query);
         if (results.length > 0) {
@@ -229,13 +275,13 @@ function extractPronoun(baseObj, res) {
                 PREFIXES +
                 'SELECT ?c ?type ?no ?gen ?an ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech      l:Pronoun ; ' +
-                '    optional {<' + res + '> l:case  ?c} ' +
-                '    optional {<' + res + '> l:number  ?no} ' +
-                '    optional {<' + res + '> l:gender  ?gen} ' +
-                '    optional {<' + res + '> l:animacy ?an}' +
-                '    optional {<' + res + '> l:lexTermType ?type}' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '> lexinfo:partOfSpeech      lexinfo:Pronoun ; ' +
+                '    optional {<' + res + '> lexinfo:case  ?c} ' +
+                '    optional {<' + res + '> lexinfo:number  ?no} ' +
+                '    optional {<' + res + '> lexinfo:gender  ?gen} ' +
+                '    optional {<' + res + '> lexinfo:animacy ?an}' +
+                '    optional {<' + res + '> lexinfo:lexTermType ?type}' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -267,10 +313,10 @@ function extractPronoun(baseObj, res) {
                 PREFIXES +
                 'SELECT ?c ?no ' +
                 'WHERE { ' +
-                '    <' + res + '>  l:partOfSpeech l:Pronoun ; ' +
-                '                   l:case  ?c ; ' +
-                '    optional {<' + res + '> l:number  ?no} ' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Pronoun ; ' +
+                '                   lexinfo:case  ?c ; ' +
+                '    optional {<' + res + '> lexinfo:number  ?no} ' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -298,11 +344,11 @@ function extractNumeral(baseObj, res) {
             PREFIXES +
             'SELECT ?no ?gen ?an ' +
             'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Numeral . ' +
-            '    optional {<' + res + '> l:gender  ?gen}' +
-            '    optional {<' + res + '> l:animacy ?an}' +
-            '    optional {<' + res + '> l:number ?no}' +
-            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Numeral . ' +
+            '    optional {<' + res + '> lexinfo:gender  ?gen}' +
+            '    optional {<' + res + '> lexinfo:animacy ?an}' +
+            '    optional {<' + res + '> lexinfo:number ?no}' +
+            '    <' + base + '> dbnary:describes <' + res + '> .' +
             '}';
         let results = getResults(query);
         if (results.length > 0) {
@@ -328,13 +374,13 @@ function extractNumeral(baseObj, res) {
                 PREFIXES +
                 'SELECT ?c ?type ?no ?gen ?an ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech      l:Numeral ; ' +
-                '    optional {<' + res + '> l:case  ?c} ' +
-                '    optional {<' + res + '> l:number  ?no} ' +
-                '    optional {<' + res + '> l:gender  ?gen} ' +
-                '    optional {<' + res + '> l:animacy ?an}' +
-                '    optional {<' + res + '> l:lexTermType ?type}' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '> lexinfo:partOfSpeech      lexinfo:Numeral ; ' +
+                '    optional {<' + res + '> lexinfo:case  ?c} ' +
+                '    optional {<' + res + '> lexinfo:number  ?no} ' +
+                '    optional {<' + res + '> lexinfo:gender  ?gen} ' +
+                '    optional {<' + res + '> lexinfo:animacy ?an}' +
+                '    optional {<' + res + '> lexinfo:lexTermType ?type}' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -366,10 +412,10 @@ function extractNumeral(baseObj, res) {
                 PREFIXES +
                 'SELECT ?c ?no ' +
                 'WHERE { ' +
-                '    <' + res + '>  l:partOfSpeech l:Numeral ; ' +
-                '                   l:case  ?c ; ' +
-                '    optional {<' + res + '> l:number  ?no} ' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Numeral ; ' +
+                '                   lexinfo:case  ?c ; ' +
+                '    optional {<' + res + '> lexinfo:number  ?no} ' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -397,9 +443,9 @@ function extractVerb(baseObj, res) {
             PREFIXES +
             'SELECT ?mood ' +
             'WHERE { ' +
-            '    <' + res + '>  l:partOfSpeech l:Verb . ' +
-            '    optional {<' + res + '> l:verbFormMood ?mood} ' +
-            '    <' + base + '> dbn:describes <' + res + '> .' +
+            '    <' + res + '>  lexinfo:partOfSpeech lexinfo:Verb . ' +
+            '    optional {<' + res + '> lexinfo:verbFormMood ?mood} ' +
+            '    <' + base + '> dbnary:describes <' + res + '> .' +
             '}';
         let results = getResults(query);
         if (results.length === 1) {
@@ -416,12 +462,12 @@ function extractVerb(baseObj, res) {
                 PREFIXES +
                 'SELECT ?mood ?tense ?no ?person ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech  l:Verb ; ' +
-                '                  l:verbFormMood  ?mood ;' +
-                '                  l:number        ?no ;' +
-                '                  l:person        ?person .' +
-                '    optional {<' + res + '> l:tense ?tense}' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '> lexinfo:partOfSpeech  lexinfo:Verb ; ' +
+                '                  lexinfo:verbFormMood  ?mood ;' +
+                '                  lexinfo:number        ?no ;' +
+                '                  lexinfo:person        ?person .' +
+                '    optional {<' + res + '> lexinfo:tense ?tense}' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -443,12 +489,12 @@ function extractVerb(baseObj, res) {
                 PREFIXES +
                 'SELECT ?voice ?no ?gen ?an ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech  l:Verb ; ' +
-                '                  l:voice         ?voice ;' +
-                '                  l:number        ?no ;' +
-                '                  l:gender        ?gen ;' +
-                '    optional {<' + res + '> l:animacy ?an }' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '    <' + res + '> lexinfo:partOfSpeech  lexinfo:Verb ; ' +
+                '                  lexinfo:voice         ?voice ;' +
+                '                  lexinfo:number        ?no ;' +
+                '                  lexinfo:gender        ?gen ;' +
+                '    optional {<' + res + '> lexinfo:animacy ?an }' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -473,13 +519,13 @@ function extractVerb(baseObj, res) {
                 PREFIXES +
                 'SELECT ?tense ?no ?gen ?an ' +
                 'WHERE { ' +
-                '    <' + res + '> l:partOfSpeech        l:Verb ; ' +
+                '    <' + res + '> lexinfo:partOfSpeech        lexinfo:Verb ; ' +
                 '                  lemon:lexicalVariant  ex-onto:transgressive ;' +
-                '                  l:tense               ?tense ;' +
-                '                  l:number              ?no ;' +
-                '                  l:gender              ?gen ;' +
-                '    optional {<' + res + '> l:animacy ?an }' +
-                '    <' + base + '> dbn:describes ?posRes . ' +
+                '                  lexinfo:tense               ?tense ;' +
+                '                  lexinfo:number              ?no ;' +
+                '                  lexinfo:gender              ?gen ;' +
+                '    optional {<' + res + '> lexinfo:animacy ?an }' +
+                '    <' + base + '> dbnary:describes ?posRes . ' +
                 '    ?posRes lemon:formVariant <' + res + '> . ' +
                 '}';
             let results = getResults(query);
@@ -503,39 +549,6 @@ function extractVerb(baseObj, res) {
     }
 }
 
-function isVerbMood(res) {
-    let query =
-        PREFIXES +
-        'SELECT ?mood ' +
-        'WHERE { ' +
-        '    <' + res + '> l:verbFormMood ?mood .' +
-        '}';
-    let results = getResults(query);
-    return (results.length === 1);
-}
-
-function isVerbParticiple(res) {
-    let query =
-        PREFIXES +
-        'SELECT ?voice ' +
-        'WHERE { ' +
-        '    <' + res + '> l:voice ?voice .' +
-        '}';
-    let results = getResults(query);
-    return (results.length === 1);
-}
-
-function isVerbTransgressive(res) {
-    let query =
-        PREFIXES +
-        'SELECT ?var ' +
-        'WHERE { ' +
-        '    <' + res + '> lemon:lexicalVariant ?var .' +
-        '}';
-    let results = getResults(query);
-    return (results.length === 1 && getValue(results[0], "var") !== "");
-}
-
 function extractAdverb(baseObj, res) {
     let level = baseObj["level"];
     let base = baseObj["base"];
@@ -546,9 +559,9 @@ function extractAdverb(baseObj, res) {
             PREFIXES +
             'SELECT ?deg ' +
             'WHERE { ' +
-            '    <' + res + '> l:partOfSpeech      l:Adverb ; ' +
-            '    optional {<' + res + '> l:degree ?deg}' +
-            '    <' + base + '> dbn:describes ?posRes . ' +
+            '    <' + res + '> lexinfo:partOfSpeech      lexinfo:Adverb ; ' +
+            '    optional {<' + res + '> lexinfo:degree ?deg}' +
+            '    <' + base + '> dbnary:describes ?posRes . ' +
             '    ?posRes lemon:formVariant <' + res + '> . ' +
             '}';
         let results = getResults(query);
@@ -579,14 +592,92 @@ function extractInterjection(baseObj, res) {
     appendEntry(base, toCzech("Interjection"));
 }
 
+
+// unfinished
+function generateNormalDeclensionTable(res, posName) {
+    let varObj = {};
+
+    let variants = getFormVariants(res,  posName);
+    for (let i = 0; i < variants.length; i++) {
+        let query =
+            PREFIXES +
+            'SELECT ?lab ?no ?case ' +
+            'WHERE { ' +
+            '    <' + variants[i] + '> rdfs:label   ?lab ;' +
+            '                          lexinfo:no   ?no ;' +
+            '                          lexinfo:case ?case . ' +
+            '}';
+        let results = getResults(query);
+        for (let j = 0; j < results.length; j++) {
+            let lab = getValue(results[j], "lab");
+            let no = getValue(results[j], "no");
+            let aCase = getValue(results[j], "case");
+
+        }
+    }
+    return "";
+}
+
+
+function isVerbMood(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?mood ' +
+        'WHERE { ' +
+        '    <' + res + '> lexinfo:verbFormMood ?mood .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
+
+function isVerbParticiple(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?voice ' +
+        'WHERE { ' +
+        '    <' + res + '> lexinfo:voice ?voice .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1);
+}
+
+function isVerbTransgressive(res) {
+    let query =
+        PREFIXES +
+        'SELECT ?var ' +
+        'WHERE { ' +
+        '    <' + res + '> lemon:lexicalVariant ?var .' +
+        '}';
+    let results = getResults(query);
+    return (results.length === 1 && getValue(results[0], "var") !== "");
+}
+
 // common functions ===================================================================================
+
+function getFormVariants(res, posName) {
+    let query =
+        PREFIXES +
+        'SELECT ?var ' +
+        'WHERE { ' +
+        '    <' + res + '> lexinfo:partOfSpeech lexinfo:' + posName + ' ; ' +
+        '                  lemon:formVariant    ?var .' +
+        '}';
+    let results = getResults(query);
+    let variants = [];
+    if (results.length > 0) {
+        for (let i = 0; i < results.length; i++) {
+            variants.push(getValue(results[i], "var"));
+        }
+    }
+    return variants;
+}
 
 function isCaseForm(res) {
     let query =
         PREFIXES +
         'SELECT ?c' +
         'WHERE { ' +
-        '    <' + res + '> l:case ?c .' +
+        '    <' + res + '> lexinfo:case ?c .' +
         '}';
     let results = getResults(query);
     return (results.length === 1);
@@ -597,7 +688,7 @@ function isDegreeForm(res) {
         PREFIXES +
         'SELECT ?deg' +
         'WHERE { ' +
-        '    <' + res + '> l:degree ?deg .' +
+        '    <' + res + '> lexinfo:degree ?deg .' +
         '}';
     let results = getResults(query);
     return (results.length === 1);
@@ -608,7 +699,7 @@ function isExtendedDeclension(res) {
         PREFIXES +
         'SELECT ?gen' +
         'WHERE { ' +
-        '    <' + res + '> l:gender ?gen .' +
+        '    <' + res + '> lexinfo:gender ?gen .' +
         '}';
     let results = getResults(query);
     return (results.length === 1);
@@ -619,7 +710,7 @@ function getPOS(res) {
         PREFIXES +
         'SELECT  ?pos ' +
         'WHERE { ' +
-        '    <' + res + '> l:partOfSpeech ?pos . ' +
+        '    <' + res + '> lexinfo:partOfSpeech ?pos . ' +
         '}';
     let results = getResults(posQuery);
     if (results.length > 0) {
@@ -633,7 +724,7 @@ function getPronunciations(base) {
         PREFIXES +
         'SELECT  ?pron ' +
         'WHERE { ' +
-        '    <' + base + '> l:pronunciation ?pron . ' +
+        '    <' + base + '> lexinfo:pronunciation ?pron . ' +
         '}';
     let results = getResults(pronQuery);
     let pronunciations = [];
@@ -651,11 +742,11 @@ function getBase(res) {
         'SELECT ?base1 ?base2 ' +
         'WHERE { ' +
         '    optional {' +
-        '        ?base1 dbn:describes <' + res + '>' +
+        '        ?base1 dbnary:describes <' + res + '>' +
         '    } ' +
         '    optional { ' +
         '        ?posRes    lemon:formVariant <' + res + '>.' +
-        '        ?base2      dbn:describes      ?posRes . ' +
+        '        ?base2      dbnary:describes      ?posRes . ' +
         '    }' +
         '}';
     let results = getResults(baseQuery);
@@ -682,50 +773,6 @@ function getLabel(res) {
         '}';
     let results = getResults(query);
     return getValue(results[0], "lab");
-}
-
-function getResources(word) {
-    let resQuery =
-        PREFIXES +
-        'SELECT ?res ' +
-        'WHERE { ' +
-        '    ?res rdfs:label \"' + word + '\"@cs ;' +
-        '         a          lemon:Word .' +
-        '} ';
-    let results = getResults(resQuery);
-    let resources = [];
-    if (results.length > 0) {
-        for (let i = 0; i < results.length; i++) {
-            resources.push(getValue(results[i], "res"));
-        }
-    }
-    return resources;
-}
-
-function getResults(query) {
-    let endpoint = "http://localhost:3030/wiki/sparql";
-    let params = "?query=" + encodeURIComponent(query) + "&format=json";
-
-    let result;
-    let http = new XMLHttpRequest();
-    http.open("GET", endpoint + params, false);
-    http.onreadystatechange = function () {
-        if (http.readyState === 4) {
-            result = http.responseText;
-        }
-    };
-    http.send();
-    let results;
-    if (result !== undefined) {
-        // console.log(result);
-        let resultObj = JSON.parse(result);
-        results = resultObj["results"]["bindings"];
-    }
-    if (results === undefined || results === null) {
-        results = [];
-    }
-
-    return results;
 }
 
 // minor functions =====================================================================================
@@ -756,17 +803,39 @@ function appendEntry(base, entry) {
     appendID('<li class=\"entry\">' + entry + '</li>', "row-" + baseMap[base]);
 }
 
-function appendID(element, id) {
-    document.getElementById(id).innerHTML += element;
+function appendEntryPlusTable(base, entry, table) {
+    appendEntry(base, entry + table);
 }
 
-function appendElement(element) {
-    document.body.innerHTML += element;
+function appendID(element, id) {
+    document.getElementById(id).innerHTML += element;
 }
 
 function containsKey(object, key) {
     let keyVal = object[key];
     return (keyVal !== undefined);
+}
+
+
+function getCaseName(number) {
+    switch (number) {
+        case 1:
+            return "nominative";
+        case 2:
+            return "genitive";
+        case 3:
+            return "dative";
+        case 4:
+            return "accusative";
+        case 5:
+            return "vocative";
+        case 6:
+            return "locative";
+        case 7:
+            return "instrumental";
+        default:
+            return "";
+    }
 }
 
 function getCaseOrder(caseName) {
@@ -922,10 +991,10 @@ function toCzech(word) {
 }
 
 let PREFIXES = "PREFIX ex: <http://www.example.com/> " +
-    "PREFIX ex-onto: <http://www.example.com/ontology#> " +
     "PREFIX lemon: <http://lemon-model.net/lemon#> " +
     "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
     "PREFIX wiki: <http://cs.wiktionary.org/wiki/> " +
     "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
-    "PREFIX l: <http://www.lexinfo.net/ontology/2.0/lexinfo#> " +
-    "PREFIX dbn: <http://kaiko.getalp.org/dbnary#> ";
+    "PREFIX lexinfo: <http://www.lexinfo.net/ontology/2.0/lexinfo#> " +
+    "PREFIX dbnary: <http://kaiko.getalp.org/dbnary#> " +
+    "PREFIX mte: <http://nl.ijs.si/ME/owl/multext-east.owl#> ";
