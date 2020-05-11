@@ -1,28 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="cs">
 <head>
-    <title>Osobní blog | Můj web s portfoliem.</title>
-    <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="styles.css">
+  <title>Osobní stránka | Martin Lukáš</title>
+  <meta charset="utf-8">
+  <meta content="Osobní stránka Martina Lukáše" name="description">
+  <meta content="Martin Lukáš" name="author">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <link href="images/favicon.png" rel="icon" type="image/png">
+  <script crossorigin="anonymous" src="https://kit.fontawesome.com/6f4addb8df.js"></script>
+  <link href="styles.css" rel="stylesheet">
 </head>
-<body>
-<div id="header">
-    <h1>Martin Lukáš - portfolio</h1>
-</div>
-<div id="container">
-    <div id="content">
-        <h4>Projekty:</h4>
-        <ul>
-            <li>
-                <a href="https://martin-lukas.github.io/cswiktionary2rdf-tools/search.html">
-                    Vyhledávač slovních tvarů na Wikislovníku</a>
-            </li>
-        </ul>
 
-    </div>
+<body>
+
+<div id="container">
+  <div id="header">
+    <h1>Martin Lukáš</h1>
+  </div>
+  <!--
+  <nav class="top-nav" id="top-nav">
+    <a class="always-visible nav-link" href="#">Domů</a>
+    <a class="always-visible nav-link" href="#">Projekty</a>
+    <a class="icon" href="javascript:void(0);" id="toggle-icon" onclick="toggleTopNav">
+      <i class="fa fa-bars"></i>
+    </a>
+  </nav>
+  -->
+  <div id="content-area">
+    <h1>Projekty</h1>
+    <br>
+    <ul>
+      <li>
+        <a href="https://martin-lukas.github.io/cswiktionary2rdf-search">
+          Vyhledávač slovních tvarů na Wikislovníku</a>
+      </li>
+    </ul>
+  </div>
+  <div id="footer">
+    &copy; 2020 Martin Lukáš | Více najdete na mém <a href="https://github.com/martin-lukas">GitHubu</a>
+  </div>
 </div>
-<div id="footer">
-    &copy; Martin Lukáš, 2019
-</div>
+
+<script>
+  document.getElementById('toggle-icon').addEventListener('click', toggleTopNav);
+  document.getElementById('top-nav').addEventListener('click', collapseTopNav);
+
+  function toggleTopNav(event) {
+    event.stopPropagation();
+    let navBarElement = document.getElementById("top-nav");
+    if (navBarElement.className === "top-nav") {
+      navBarElement.className += " responsive";
+    } else {
+      navBarElement.className = "top-nav";
+    }
+  }
+
+  function collapseTopNav() {
+    let navBarElement = document.getElementById("top-nav");
+    navBarElement.className = "top-nav";
+  }
+</script>
+
 </body>
 </html>

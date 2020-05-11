@@ -1,42 +1,93 @@
-body {margin: 0; padding: 0; background-color: #ededed; font: 1.1em verdana, arial;}
+:root {
+    --default-text-color: #333;
+    --active-el-color: #4994d4;
+}
 
-/* For divs that change dimensions when afected by margin, padding or a border. */
-* {
-	-webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-	box-sizing: border-box;
+* {box-sizing: border-box;}
+*:focus, *:visited, *:active, *:hover {outline: 0 !important;}
+*::-moz-focus-inner {border: 0;}
+html, body, ul, li, a {margin: 0;padding: 0;border: 0;font-family: Arial, Helvetica, sans-serif;}
+html, body {background-color: #f0f0f0;}
+body {color: var(--default-text-color);}
+
+#container {
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 0 0 10px 10px;
+    max-width: 850px;
+    min-width: 210px;
 }
 
 #header {
-	background-color: #ededed; 
-	text-align: center;
+    text-align: center;
+    font-size: 20px;
+    padding: 5px 0 10px 0;
+    color: var(--default-text-color);
+    user-select: none;
+    text-shadow: 1px 1px #656464;
 }
-#container {
-	min-height: 500px; 
-	background-color: white;
+
+@media screen and (min-width: 500px) {#header {font-size: 20px;}}
+
+.top-nav {
+    background-color: var(--default-text-color);
+    overflow: hidden;
+    user-select: none;
 }
-#content {
-	max-width: 800px; 
-	margin: 0 auto; 
-	padding: 10px;
+
+.top-nav a.nav-link, a.icon {
+    overflow: visible;
+    float: left;
+    display: block;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 10px 16px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
 }
+
+.top-nav a:hover {background-color: #eee; color: var(--default-text-color);}
+
+/* Hide the link that should open and close the top-nav on small screens */
+.top-nav .icon {display: none;}
+
+/* When the screen is less than 550 pixels wide, hide all links */
+@media screen and (max-width: 550px) {
+    .top-nav a:not(.always-visible) {display: none;}
+    .top-nav a.icon {float: right; display: block;}
+}
+
+/* The "responsive" class is added to the top-nav with JavaScript when the user clicks
+on the icon. This class makes the top-nav look good on small screens (display the links
+vertically instead of horizontally) */
+@media screen and (max-width: 550px) {
+    .top-nav.responsive {position: relative;}
+    .top-nav.responsive a.icon {position: absolute;right: 0;top: 0;}
+    .top-nav.responsive a {float: none;display: block;text-align: left;}
+    .top-nav.responsive {float: none;}
+}
+
+#content-area {padding: 20px;}
+
+ul {margin: -5px 30px;}
+li {padding: 5px; list-style: disc;}
+
 #footer {
-	padding: 10px; 
-	text-align: center;
+    text-align: center;
+    font-size: 1em;
+    color: #5a5a5a;
+    padding: 20px 0 10px 0;
 }
 
-td, th {border: 1px solid black;}
-ul {margin: 0;}
-table {border-collapse: collapse;}
-td {vertical-align: top}
-textarea {
-	width: 600px;
-	height: 300px;
+#footer a {text-decoration: underline; color: #5a5a5a;}
+
+#footer a:hover {
+    color: var(--default-text-color);
 }
 
-pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
-.string { color: green; }
-.number { color: darkorange; }
-.boolean { color: blue; }
-.null { color: magenta; }
-.key { color: red; }
+/*@media screen and (min-width: 500px) {*/
+/*  #header {*/
+/*    font-size: 60px;*/
+/*  }*/
+/*}*/
