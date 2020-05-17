@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>My portfolio | Martin Lukáš</title>
+  <meta charset="utf-8">
+  <meta content="Personal website of Martin Lukáš" name="description">
+  <meta content="Martin Lukáš" name="author">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <link href="../images/favicon.ico" rel="icon" type="image/png">
+  <script crossorigin="anonymous" src="https://kit.fontawesome.com/6f4addb8df.js"></script>
+  <link href="../styles.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div id="container">
+  <div id="header">
+    <div id="lang-div">
+      <a href="../cs">cs</a> | <b>en</b>
+    </div>
+    <h1>Martin Lukáš</h1>
+  </div>
+  <nav class="top-nav" id="top-nav">
+    <a class="nav-link" href="#about-me">About Me</a>
+    <a class="nav-link" href="#projects">Projects</a>
+    <a class="icon" href="javascript:void(0);" id="toggle-icon">
+      <i class="fa fa-bars"></i>
+    </a>
+  </nav>
+  <div id="content-area">
+    <h1 id="about-me">About Me</h1>
+    <p>In the year 2020 I finished my master's at the University of Economics in Prague
+      (majored in Knowledge and Web Technologies). I code mostly in Java,
+      and if I'm doing web development, then I use Javascript or Vue.js.</p>
+    <hr>
+    <h1 id="projects">Projects</h1>
+    <div class="project-item">
+      <div class="project-img">
+        <a href="../images/langreader.png"><img alt="LangReader" src="../images/langreader.png"></a>
+      </div>
+      <div class="project-desc">
+        <h2>LangReader</h2>
+        <ul>
+          <li>Web: <a href="https://www.langreader.net">www.langreader.net</a></li>
+          <li>Source: <a href="https://github.com/martin-lukas/langreader">GitHub</a></li>
+          <li><p>A web application for studying languages through reading. Add texts you're interested
+            in, and mark words as known, or that you want to study them. When you mark a word as
+            studied, a translation appears above it.</p></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="project-item">
+      <div class="project-desc">
+        <h2>CsWiktionary2RDF - extractor</h2>
+        <ul>
+          <li>Source: <a href="https://github.com/martin-lukas/cswiktionary2rdf">GitHub</a></li>
+          <li><p>An information extractor for the Czech Wiktionary, which transforms it into
+            structured RDF data. It outputs an RDF graph, which allows querying with SPARQL. Possible uses
+            are: word lemmatization (see the project below), enriching conjugated word forms with
+            semantics from DBpedia (a structured Wikipedia) or finding missing information on Wiktionary.
+          </p></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="project-item">
+      <div class="project-img">
+        <a href="../images/cswiktionary2rdf-search.png">
+          <img alt="CsWiktionary2RDF search engine" src="../images/cswiktionary2rdf-search.png">
+        </a>
+      </div>
+      <div class="project-desc">
+        <h2>CsWiktionary2RDF - search engine</h2>
+        <ul>
+          <li>Web: <a href="https://martin-lukas.github.io/cswiktionary2rdf-search">GH Pages</a></li>
+          <li>Source: <a href="https://github.com/martin-lukas/cswiktionary2rdf-search">GitHub</a></li>
+          <li><p>
+            A search engine for the RDF graph from the extractor above. It searches all the
+            Wiktionary pages for the given term, and returns all the occurences, including in which
+            position it found on the page. For example, if we input the word <i>obrazem</i>, we get
+            <i><b>obraz</b> (ɔbras): podstatné jméno, rod mužský neživotný, č. jednotné, 7. pád</i>,
+            which means - noun, masculine gender, singular, 7th case (instrumental). That's an example
+            of lemmatization, where it gave us the base form of the given term, and also details
+            about the specific form. The website is currently only available
+            in Czech.</p></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="project-item">
+      <div class="project-img">
+        <a href="../images/foli-app.png"><img alt="Föli aplikace" src="../images/foli-app.png"></a>
+      </div>
+      <div class="project-desc">
+        <h2>Föli App - bus tracking in Turku, Finland</h2>
+        <ul>
+          <li>Web: <a href="https://martin-lukas.github.io/foli-app">GH Pages</a></li>
+          <li>Source: <a href="https://github.com/martin-lukas/foli-app">GitHub</a></li>
+          <li><p>This website allows you to type in a bus number from the city of Turku, Finland.
+            It will then show the bus route through the city as well as the current location of all the
+            buses on that route. The location is automatically refreshed every few seconds. This
+            project was developed for a web development course at the University of Turku.</p></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div id="footer">
+    &copy; 2020 Martin Lukáš | You can find more on my
+    <a href="https://github.com/martin-lukas">GitHub</a>
+  </div>
+</div>
+
+<script>
+  document.getElementById('toggle-icon').addEventListener('click', toggleTopNav);
+  document.getElementById('top-nav').addEventListener('click', collapseTopNav);
+
+  function toggleTopNav(event) {
+    event.stopPropagation();
+    let navBarElement = document.getElementById("top-nav");
+    if (navBarElement.className === "top-nav") {
+      navBarElement.className += " responsive";
+    } else {
+      navBarElement.className = "top-nav";
+    }
+  }
+
+  function collapseTopNav() {
+    let navBarElement = document.getElementById("top-nav");
+    navBarElement.className = "top-nav";
+  }
+</script>
+
+</body>
+</html>

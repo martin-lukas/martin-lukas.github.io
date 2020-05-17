@@ -7,6 +7,11 @@
 *:focus, *:visited, *:active, *:hover {outline: 0 !important;}
 *::-moz-focus-inner {border: 0;}
 html, body, ul, li, a {margin: 0;padding: 0;border: 0;font-family: Arial, Helvetica, sans-serif;}
+li {list-style: none}
+hr {
+    margin: 40px 0;
+    border-width: 1px 0 0 0;
+}
 html, body {background-color: #f0f0f0;}
 body {color: var(--default-text-color);}
 
@@ -27,10 +32,22 @@ body {color: var(--default-text-color);}
     text-shadow: 1px 1px #656464;
 }
 
+#header h1 {
+    margin: 0 0 15px 0;
+}
+
 @media screen and (min-width: 500px) {#header {font-size: 20px;}}
 
+#lang-div {
+    text-align: right;
+    font-size: 0.8em;
+    padding: 0;
+    margin: 5px 15px 0 0;
+    color: var(--default-text-color);
+    text-shadow: none;
+}
+
 .top-nav {
-    background-color: var(--default-text-color);
     overflow: hidden;
     user-select: none;
 }
@@ -39,7 +56,7 @@ body {color: var(--default-text-color);}
     overflow: visible;
     float: left;
     display: block;
-    color: #f2f2f2;
+    color: var(--default-text-color);
     text-align: center;
     padding: 10px 16px;
     text-decoration: none;
@@ -47,7 +64,12 @@ body {color: var(--default-text-color);}
     cursor: pointer;
 }
 
-.top-nav a:hover {background-color: #eee; color: var(--default-text-color);}
+.top-nav a:hover {
+    border-width: 1px 0;
+    padding: 9px 16px;
+    border-color: var(--default-text-color);
+    border-style: solid;
+}
 
 /* Hide the link that should open and close the top-nav on small screens */
 .top-nav .icon {display: none;}
@@ -55,7 +77,10 @@ body {color: var(--default-text-color);}
 /* When the screen is less than 550 pixels wide, hide all links */
 @media screen and (max-width: 550px) {
     .top-nav a:not(.always-visible) {display: none;}
-    .top-nav a.icon {float: right; display: block;}
+    .top-nav a.icon {
+        float: right;
+        display: block;
+    }
 }
 
 /* The "responsive" class is added to the top-nav with JavaScript when the user clicks
@@ -70,8 +95,56 @@ vertically instead of horizontally) */
 
 #content-area {padding: 20px;}
 
-ul {margin: -5px 30px;}
-li {padding: 5px; list-style: disc;}
+.project-item {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid #a1a1a1;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0 0 0;
+}
+
+@media screen and (max-width: 600px) {
+    .project-item {
+        flex-direction: column;
+    }
+}
+
+.project-img {
+    text-align: center;
+    margin-right: 20px;
+}
+
+img {
+    width: 200px;
+    border-radius: 4px;
+}
+
+.project-desc {
+    margin-right: 10px;
+}
+
+.project-desc h2 {
+    margin: 0;
+}
+
+.project-desc p {
+    margin-bottom: 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th.center, td.center {
+    text-align: center;
+}
 
 #footer {
     text-align: center;
@@ -85,9 +158,3 @@ li {padding: 5px; list-style: disc;}
 #footer a:hover {
     color: var(--default-text-color);
 }
-
-/*@media screen and (min-width: 500px) {*/
-/*  #header {*/
-/*    font-size: 60px;*/
-/*  }*/
-/*}*/
