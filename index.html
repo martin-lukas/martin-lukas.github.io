@@ -17,7 +17,7 @@
   <div id="container">
     <!-- Header -->
     <div id="header">
-      <h1>Martin Lukas</h1>
+      <h1>Martin Lukáš</h1>
     </div>
     <!-- End of header -->
 
@@ -34,11 +34,18 @@
     <div id="content-area">
       <h1 id="about-me">About Me</h1>
       <p>
-        I'm a full-stack software developer with experience in Java, Spring Framework, React, JavaScript and TypeScript.
-        I'm currently developing and maintaining web applications for one of the leading Czech banks (CSOB).
-        In my free time, I work on a personal project called LangReader, through which I learn English and Korean.
-        <br><br>
-        You can find more information about me at my <a href="https://www.linkedin.com/in/martin-luk%C3%A1%C5%A1/">
+        I'm a software developer with experience mainly in:
+      <ul class="normal-list">
+        <li>Java (Spring, Spring Boot, Maven, Gradle)</li>
+        <li>Scala (Akka, ZIO, sbt)</li>
+        <li>React (JavaScript, TypeScript, Redux)</li>
+      </ul>
+      <br>
+      I'm currently developing logistics systems for delivering groceries at Ocado Technology (UK), mostly in Scala.
+      I also work on some personal projects like LangReader (learning languages), Online Friends (connecting people
+      with common interests) and tinker with a home server running all kinds of things (a.k.a. personal cloud).
+      <br><br>
+      You can find more information about me at my <a href="https://www.linkedin.com/in/martin-lukasz/">
         LinkedIn profile</a> or my <a href="https://github.com/martin-lukas/">GitHub profile</a>.
       </p>
       <hr>
@@ -62,8 +69,12 @@
                 was to pay attention to performance.
               </p>
             </li>
-            <li><p><a href="https://langreader.app" target="_blank">Website</a></p></li>
-            <li><p><a href="https://github.com/martin-lukas/langreader" target="_blank">Source</a></p></li>
+            <li>
+              <p><a href="https://langreader.app" target="_blank">Website</a></p>
+            </li>
+            <li>
+              <p><a href="https://github.com/martin-lukas/langreader" target="_blank">Source</a></p>
+            </li>
           </ul>
         </div>
       </div>
@@ -79,49 +90,66 @@
           <ul>
             <li>
               <p>
-                An information extractor for the Czech Wiktionary - a Czech community-driven dictionary. This extractor transforms its
-                data into a structured RDF graph, which allows querying with the SPARQL language. Possible uses
-                are: word lemmatization (see the project below), enriching conjugated word forms with
-                semantics from DBpedia (a structured Wikipedia) or finding missing information on Wiktionary.
+                An information extractor for the Czech Wiktionary - a Czech community-driven dictionary.
+                This extractor transforms its data into a structured RDF graph, which allows querying
+                with the SPARQL language. Possible uses are: word lemmatization (see the project below),
+                enriching conjugated word forms with semantics from DBpedia (a structured Wikipedia)
+                or finding missing information on Wiktionary.
               </p>
               <p>
                 Also included is a search engine for the RDF graph from the extractor above. It searches all the
                 Wiktionary pages for the given term, and returns all the occurences, including in which
-                position it was found on the page. For example, if we type in the word <i>obrazem</i> (en. (with) an image), we get
-                <i><b>obraz</b> (ɔbras): podstatné jméno, rod mužský neživotný, č. jednotné, 7. pád</i>,
-                which means - noun, masculine gender, singular, 7th case (instrumental). That's an example
-                of lemmatization, where it gave us the base form of the given term, and also some more details
-                about the specific form.
+                position it was found on the page. For example, if we type in the word <i>obrazem</i>
+                (en. (with) an image), we get
+                <i>
+                  <b>obraz</b> (ɔbras): podstatné jméno, rod mužský neživotný, č. jednotné, 7. pád,
+                </i>
+                which means - noun, masculine gender, singular, 7th case (instrumental).
+                That's an example of lemmatization, where it gave us the base form of the given term, and also some more
+                details about the specific form.
               </p>
               <p>
                 The search engine website is available in English and Czech.
               </p>
             </li>
-            <li><p>Search Engine (<a href="https://martin-lukas.github.io/cswiktionary2rdf-search" target="_blank">Website</a>)</p></li>
-            <li><p>Search Engine (<a href="https://github.com/martin-lukas/cswiktionary2rdf-search" target="_blank">Source</a>)</p></li>
-            <li><p>Extractor (<a href="https://github.com/martin-lukas/cswiktionary2rdf" target="_blank">Source</a>)</p></li>
             <li>
-                <h4>Use cases:</h4>
-                <ul class="normal-list">
-                  <li>
-                    Look up an Czech word, conjugated in any case, and find out not only its base form, but also information
-                    about the conjugated form.
-                  </li>
-                  <li>
-                    Use a Linked Data provider (e.g. <a href="https://cs.dbpedia.org/sparql" target="_blank">Czech DBpedia</a>) to query my dataset
-                    from the extractor, to find out interesting facts about the Czech Wiktionary database, which would not be available otherwise.
-                    I.e. list all the words on Wiktionary, which don't have a gender filled out yet - useful for contributors.
-                  </li>
-                </ul>
+              <p>
+                Search Engine (<a href="https://martin-lukas.github.io/cswiktionary2rdf-search">Website</a>)
+              </p>
+            </li>
+            <li>
+              <p>
+                Search Engine (<a href="https://github.com/martin-lukas/cswiktionary2rdf-search">Source</a>)
+              </p>
+            </li>
+            <li>
+              <p>
+                Extractor (<a href="https://github.com/martin-lukas/cswiktionary2rdf">Source</a>)
+              </p>
+            </li>
+            <li>
+              <h4>Use cases:</h4>
+              <ul class="normal-list">
+                <li>
+                  Look up an Czech word, conjugated in any case, and find out not only its base form, but also
+                  information about the conjugated form.
+                </li>
+                <li>
+                  Use a Linked Data provider (e.g.
+                  <a href="https://cs.dbpedia.org/sparql" target="_blank">Czech DBpedia</a>) to query my dataset
+                  from the extractor, to find out interesting facts about the Czech Wiktionary database, which would not
+                  be available otherwise. I.e. list all the words on Wiktionary, which don't have a gender filled out
+                  yet - useful for contributors.
+                </li>
+              </ul>
             </li>
           </ul>
         </div>
       </div>
     </div>
     <div id="footer">
-      &copy; 2022 Martin Lukas | You can find more on my
+      &copy; 2022 Martin Lukáš | You can find more on my
       <a href="https://github.com/martin-lukas" target="_blank">GitHub</a>
-      | <a href="https://martin-lukas.github.io/martins-blog/">My Blog</a>
     </div>
   </div>
 
